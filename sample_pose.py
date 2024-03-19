@@ -85,6 +85,7 @@ def main():
         import matplotlib.pyplot as plt
         
         fig = plt.figure()
+        #axが座標のデータが入る部分
         ax = fig.add_subplot(111, projection="3d")
         fig.subplots_adjust(left=0.0, right=1, bottom=0, top=1)
 
@@ -402,7 +403,7 @@ def draw_landmarks(
                         (0, 255, 0), 2)
     return image
 
-
+#ワールド座標表示
 def plot_world_landmarks(
     plt,
     ax,

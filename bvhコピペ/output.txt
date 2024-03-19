@@ -1,0 +1,103 @@
+HIERARCHY
+ROOT Hips 
+{{
+	OFFSET 0.00 0.00 0.00 	CHANNELS 6 Xposition Yposition Zposition Zrotation Xrotation Yrotation 	JOINT LeftHip 	{{
+		OFFSET {np2str(LeftHip)} 		CHANNELS 3 Zrotation Xrotation Yrotation 
+        JOINT LeftKnee         {{
+            OFFSET {np2str(LeftKnee)}             CHANNELS 3 Zrotation Xrotation Yrotation 
+            JOINT LeftAnkle             {{
+            OFFSET {np2str(LeftAnkle)}             CHANNELS 3 Zrotation Xrotation Yrotation                 JOINT LeftHeel                 {{
+                    OFFSET {np2str(LeftHeel)}                     CHANNELS 3 Zrotation Xrotation Yrotation                     
+                    End Site
+                    {{
+                        OFFSET {np2str(LeftHeel)}                     }}
+                }}
+
+                JOINT LeftToes                 {{
+                    OFFSET {np2str(LeftToes)}                     CHANNELS 3 Zrotation Xrotation Yrotation                     
+                    End Site
+                    {{
+                        OFFSET {np2str(LeftToes)}                     }}
+                }}
+                
+            }}
+        }}
+	}}
+
+    
+	JOINT RightHip 	{{
+		OFFSET {np2str(RightHip)} 		CHANNELS 3 Zrotation Xrotation Yrotation 
+        JOINT RightKnee         {{
+            OFFSET {np2str(RightKnee)}             CHANNELS 3 Zrotation Xrotation Yrotation 
+            JOINT RightAnkle             {{
+            OFFSET {np2str(RightAnkle)}             CHANNELS 3 Zrotation Xrotation Yrotation                 JOINT RightHeel                 {{
+                    OFFSET {np2str(RightHeel)}                     CHANNELS 3 Zrotation Xrotation Yrotation                     
+                    End Site
+                    {{
+                        OFFSET {np2str(RightHeel)}                     }}
+                }}
+
+                JOINT RightToes                 {{
+                    OFFSET {np2str(RightToes)}                     CHANNELS 3 Zrotation Xrotation Yrotation                     
+                    End Site
+                    {{
+                        OFFSET {np2str(RightToes)}                     }}
+                }}
+                
+            }}
+        }}
+
+
+	}}
+
+        JOINT Heart 	{{
+		OFFSET {np2str(Heart)} 		CHANNELS 3 Zrotation Xrotation Yrotation         JOINT Nose         {{
+            OFFSET {np2str(Nose)}             CHANNELS 3 Zrotation Xrotation Yrotation             End Site
+            {{
+                OFFSET {np2str(Nose)}             }}
+        }}        
+                
+        JOINT LeftShoulder         {{
+            OFFSET {np2str(LeftShoulder)}             CHANNELS 3 Zrotation Xrotation Yrotation 
+            JOINT LeftElbow             {{
+                OFFSET {np2str(LeftElbow)}                 CHANNELS 3 Zrotation Xrotation Yrotation                 
+                JOINT LeftWrist                 {{
+                    OFFSET {np2str(LeftWrist)}                     CHANNELS 3 Zrotation Xrotation Yrotation                     JOINT LeftThumb                     {{
+                        OFFSET {np2str(LeftThumb)}                         CHANNELS 3 Zrotation Xrotation Yrotation                         
+                        {{
+                            OFFSET {np2str(LeftThumb)}                         }}
+                    }}
+
+                    JOINT LeftPinky                     {{
+                        OFFSET {np2str(LeftPinky)}                         CHANNELS 3 Zrotation Xrotation Yrotation                         End Site
+                        {{
+                            OFFSET {np2str(LeftPinky)}                         }}
+                    }}
+                }}
+            }}
+        }}
+                JOINT RightShoulder         {{
+            OFFSET {np2str(RightShoulder)}             CHANNELS 3 Zrotation Xrotation Yrotation 
+            JOINT RightElbow             {{
+                OFFSET {np2str(RightElbow)}                 CHANNELS 3 Zrotation Xrotation Yrotation                 
+                JOINT RightWrist                 {{
+                    OFFSET {np2str(RightWrist)}                     CHANNELS 3 Zrotation Xrotation Yrotation                     JOINT RightThumb                     {{
+                        OFFSET {np2str(RightThumb)}                         CHANNELS 3 Zrotation Xrotation Yrotation 
+                        End Site
+                        {{
+                            OFFSET {np2str(RightThumb)}                         }}
+                    }}
+                    
+                    JOINT RightPinky                     {{
+                        OFFSET {np2str(RightPinky)}                         CHANNELS 3 Zrotation Xrotation Yrotation                         End Site
+                        {{
+                            OFFSET {np2str(RightPinky)}                         }}
+                    }}
+                }}
+            }}
+        }}
+    }}
+
+}}
+MOTION
+Frames: {len(frames)} Frame Time: 0.0333333 
