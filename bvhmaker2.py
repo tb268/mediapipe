@@ -46,7 +46,17 @@ def np2strForList(array):
 
 
 #ベクトル間の角度を取得
+
 def rotxyz(vec_before,vec_after):
+    #*************************************************
+    #
+    #ベクトルの角度取得
+    #
+    #vec_before :角度を取りたい部分のより腰に近い方。膝部分なら上足
+    #vec_after  :角度を取りたい部分のより腰から遠い方。膝部分なら下足
+    #
+    #
+    #*************************************************
     #各長さ
     vec1Len=np.linalg.norm(vec_before)
     vec2Len=np.linalg.norm(vec_after)
@@ -178,6 +188,9 @@ VectorUp=np.array([0,0,0])#上ベクトル
 
 Motions_1=[]
 Motions_2=[]
+Motions_rot1=[]
+Motions_rot2=[]
+
 
 #フレームごとに取得
 for index, (landmarks1,landmarks2) in enumerate(zip(frames1,frames2)):
@@ -248,37 +261,51 @@ for index, (landmarks1,landmarks2) in enumerate(zip(frames1,frames2)):
     RightThumb=(RThumb-RWrist)#右親指
     RightIndex=(RIndex-RWrist)#右人差し指
     RightPinky=(RPinky-RWrist)#右小指
+    
+    #上半身下半身をつなげる
+    LeftSide=(LShoulder-LHip)
+    RightSide=(RShoulder-RHip)
+
     #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
     #角度
     #左下半身
-    LeftHip_rot=rotxyz(VectorUp,LeftHip)
-    LeftKnee_rot=rotxyz(LeftHip,LeftKnee)
-    LeftAnkle_rot=rotxyz(LeftKnee,LeftAnkle)
-    LeftToes_rot=rotxyz(LeftAnkle,LeftToes)
-    LeftHeel_rot=rotxyz(LeftAnkle,LeftHeel)
+    LeftHip_rot=rotxyz(VectorUp,LeftHip)        #左尻角度
+    LeftKnee_rot=rotxyz(LeftHip,LeftKnee)       #左足付け根角度
+    LeftKnee_rot_2=rotxyz(-LeftSide,LeftKnee)       #左足付け根角度2(Leftsideは尻→肩なので逆にする)
+    LeftAnkle_rot=rotxyz(LeftKnee,LeftAnkle)    #左ひざ角度
+    LeftToes_rot=rotxyz(LeftAnkle,LeftToes)     #左足首つま先角度
+    LeftHeel_rot=rotxyz(LeftAnkle,LeftHeel)     #左足首かかと角度
+
     #右下半身
-    RightHip_rot=rotxyz(VectorUp,RightHip)
-    RightKnee_rot=rotxyz(RightHip,RightKnee)
-    RightAnkle_rot=rotxyz(RightKnee,RightAnkle)
-    RightToes_rot=rotxyz(RightAnkle,RightToes)
-    RightHeel_rot=rotxyz(RightToes,RightHeel)
+    RightHip_rot=rotxyz(VectorUp,RightHip)          #右尻角度
+    RightKnee_rot=rotxyz(RightHip,RightKnee)        #右ひざ角度
+    RightKnee_rot_2=rotxyz(RightSide,RightKnee)        #右ひざ角度
+    RightAnkle_rot=rotxyz(RightKnee,RightAnkle)     #右足首角度
+    RightToes_rot=rotxyz(RightAnkle,RightToes)      #右足首つま先角度
+    RightHeel_rot=rotxyz(RightToes,RightHeel)       #右足首かかと角度
+
     #上半身
-    Heart_rot=rotxyz(VectorUp,Heart)
-    Nose_rot=rotxyz(Heart,Nose)
+    Heart_rot=rotxyz(VectorUp,Heart)    #心臓角度
+    Nose_rot=rotxyz(Heart,Nose)         #鼻角度
+
     #左上半身
-    LeftShoulder_rot=rotxyz(Heart,LeftShoulder)
-    LeftElbow_rot=rotxyz(LeftShoulder,LeftElbow)
-    LeftWrist_rot=rotxyz(LeftElbow,LeftWrist)
-    LeftThumb_rot=rotxyz(LeftWrist,LeftThumb)
-    LeftIndex_rot=rotxyz(LeftWrist,LeftIndex)
-    LeftPinky_rot=rotxyz(LeftWrist,LeftPinky)
+    LeftShoulder_rot=rotxyz(Heart,LeftShoulder)     #左までの角度 
+    LeftElbow_rot=rotxyz(LeftShoulder,LeftElbow)    #左腕付け根角度
+    LeftElbow_rot_2=rotxyz(LeftSide,LeftElbow)    #左腕付け根角度2
+    LeftWrist_rot=rotxyz(LeftElbow,LeftWrist)       #左ひじ角度
+    LeftThumb_rot=rotxyz(LeftWrist,LeftThumb)       #左手首親指角度
+    LeftIndex_rot=rotxyz(LeftWrist,LeftIndex)       #左手首中指角度
+    LeftPinky_rot=rotxyz(LeftWrist,LeftPinky)       #左手首小指角度
+
     #右上半身
-    RightShoulder_rot=rotxyz(Heart,RightShoulder)
-    RightElbow_rot=rotxyz(RightShoulder,RightElbow)
-    RightWrist_rot=rotxyz(RightElbow,RightWrist)
-    RightThumb_rot=rotxyz(RightWrist,RightThumb)
-    RightIndex_rot=rotxyz(RightWrist,RightIndex)
-    RightPinky_rot=rotxyz(RightWrist,RightPinky)
+    RightShoulder_rot=rotxyz(Heart,RightShoulder)       #右肩までの角度 
+    RightElbow_rot=rotxyz(RightShoulder,RightElbow)     #右腕付け根角度
+    RightElbow_rot_2=rotxyz(RightSide,RightElbow)     #右腕付け根角度2
+    RightWrist_rot=rotxyz(RightElbow,RightWrist)        #右ひじ角度
+    RightThumb_rot=rotxyz(RightWrist,RightThumb)        #右手首親指角度
+    RightIndex_rot=rotxyz(RightWrist,RightIndex)        #右手首中指角度
+    RightPinky_rot=rotxyz(RightWrist,RightPinky)        #右手首小指角度
+    
 
     #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
     #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
@@ -373,27 +400,27 @@ for index, (landmarks1,landmarks2) in enumerate(zip(frames1,frames2)):
 
 
 
-
-
-
-
     #生徒のベクトル取得
     #腰から上半身、右足、左足の三つに分かれる
+
     #左足================================================================
     LeftHip2=(LHip2-Base2)#左腰
     LeftKnee2=(LKnee2-LHip2)#左ひざ
     LeftAnkle2=(LAnkle2-LKnee2)#左足首
     LeftHeel2=(LHeel2-LAnkle2)#左かかと
     LeftToes2=(LToes2-LAnkle2)#左つま先
+
     #右足================================================================
     RightHip2=(RHip2-Base2)#右腰
     RightKnee2=(RKnee2-RHip2)#右ひざ
     RightAnkle2=(RAnkle2-RKnee2)#右足首
     RightHeel2=(RHeel2-RAnkle2)#右かかと
     RightToes2=(RToes2-RAnkle2)#右つま先
+
     #上半身================================================================
     Heart2=(HeartAbsol2-Base2)#胸（相対位置）
     Nose2=(NoseAbsol2-HeartAbsol2)#鼻（相対位置）
+
     #左腕
     LeftShoulder2=(LShoulder2-Heart2)#左肩
     LeftElbow2=(LElbow2-LShoulder2)#左ひじ
@@ -401,6 +428,7 @@ for index, (landmarks1,landmarks2) in enumerate(zip(frames1,frames2)):
     LeftThumb2=(LThumb2-LWrist2)#左親指
     LeftIndex2=(LIndex2-LWrist2)#左人差し指
     LeftPinky2=(LPinky2-LWrist2)#左小指
+
     #右腕
     RightShoulder2=(RShoulder2-Heart2)#右肩
     RightElbow2=(RElbow2-RShoulder2)#右ひじ
@@ -409,47 +437,53 @@ for index, (landmarks1,landmarks2) in enumerate(zip(frames1,frames2)):
     RightIndex2=(RIndex2-RWrist2)#右人差し指
     RightPinky2=(RPinky2-RWrist2)#右小指
 
-       #角度
+    #上半身下半身をつなげる
+    LeftSide2=(LShoulder2-LHip2)
+    RightSide2=(RShoulder2-RHip2)
+
+    #角度
     #左下半身
-    LeftHip_rot=rotxyz(VectorUp,LeftHip)
-    LeftKnee_rot=rotxyz(LeftHip,LeftKnee)
-    LeftAnkle_rot=rotxyz(LeftKnee,LeftAnkle)
-    LeftToes_rot=rotxyz(LeftAnkle,LeftToes)
-    LeftHeel_rot=rotxyz(LeftAnkle,LeftHeel)
+    LeftHip_rot2=rotxyz(VectorUp,LeftHip2)        #左尻角度
+    LeftKnee_rot2=rotxyz(LeftHip2,LeftKnee2)       #左足付け根角度
+    LeftKnee_rot2_2=rotxyz(-LeftSide2,LeftKnee2)       #左足付け根角度2(Leftsideは尻→肩なので逆にする)
+    LeftAnkle_rot2=rotxyz(LeftKnee2,LeftAnkle2)    #左ひざ角度
+    LeftToes_rot2=rotxyz(LeftAnkle2,LeftToes2)     #左足首つま先角度
+    LeftHeel_rot2=rotxyz(LeftAnkle2,LeftHeel2)     #左足首かかと角度
+
     #右下半身
-    RightHip_rot=rotxyz(VectorUp,RightHip)
-    RightKnee_rot=rotxyz(RightHip,RightKnee)
-    RightAnkle_rot=rotxyz(RightKnee,RightAnkle)
-    RightToes_rot=rotxyz(RightAnkle,RightToes)
-    RightHeel_rot=rotxyz(RightToes,RightHeel)
+    RightHip_rot2=rotxyz(VectorUp,RightHip2)          #右尻角度
+    RightKnee_rot2=rotxyz(RightHip2,RightKnee2)        #右ひざ角度
+    RightKnee_rot2_2=rotxyz(RightSide2,RightKnee2)        #右ひざ角度
+    RightAnkle_rot2=rotxyz(RightKnee2,RightAnkle2)     #右足首角度
+    RightToes_rot2=rotxyz(RightAnkle2,RightToes2)      #右足首つま先角度
+    RightHeel_rot2=rotxyz(RightToes2,RightHeel2)       #右足首かかと角度
+
     #上半身
-    Heart_rot=rotxyz(VectorUp,Heart)
-    Nose_rot=rotxyz(Heart,Nose)
+    Heart_rot2=rotxyz(VectorUp,Heart2)    #心臓角度
+    Nose_rot2=rotxyz(Heart2,Nose2)         #鼻角度
+
     #左上半身
-    LeftShoulder_rot=rotxyz(Heart,LeftShoulder)
-    LeftElbow_rot=rotxyz(LeftShoulder,LeftElbow)
-    LeftWrist_rot=rotxyz(LeftElbow,LeftWrist)
-    LeftThumb_rot=rotxyz(LeftWrist,LeftThumb)
-    LeftIndex_rot=rotxyz(LeftWrist,LeftIndex)
-    LeftPinky_rot=rotxyz(LeftWrist,LeftPinky)
+    LeftShoulder_rot2=rotxyz(Heart2,LeftShoulder2)     #左までの角度 
+    LeftElbow_rot2=rotxyz(LeftShoulder2,LeftElbow2)    #左腕付け根角度
+    LeftElbow_rot2_2=rotxyz(LeftSide2,LeftElbow2)    #左腕付け根角度2
+    LeftWrist_rot2=rotxyz(LeftElbow2,LeftWrist2)       #左ひじ角度
+    LeftThumb_rot2=rotxyz(LeftWrist2,LeftThumb2)       #左手首親指角度
+    LeftIndex_rot2=rotxyz(LeftWrist2,LeftIndex2)       #左手首中指角度
+    LeftPinky_rot2=rotxyz(LeftWrist2,LeftPinky2)       #左手首小指角度
+
     #右上半身
-    RightShoulder_rot=rotxyz(Heart,RightShoulder)
-    RightElbow_rot=rotxyz(RightShoulder,RightElbow)
-    RightWrist_rot=rotxyz(RightElbow,RightWrist)
-    RightThumb_rot=rotxyz(RightWrist,RightThumb)
-    RightIndex_rot=rotxyz(RightWrist,RightIndex)
-    RightPinky_rot=rotxyz(RightWrist,RightPinky)
+    RightShoulder_rot2=rotxyz(Heart2,RightShoulder2)       #右肩までの角度 
+    RightElbow_rot2=rotxyz(RightShoulder2,RightElbow)     #右腕付け根角度
+    RightElbow_rot2_2=rotxyz(RightSide2,RightElbow2)     #右腕付け根角度2
+    RightWrist_rot2=rotxyz(RightElbow2,RightWrist2)        #右ひじ角度
+    RightThumb_rot2=rotxyz(RightWrist2,RightThumb2)        #右手首親指角度
+    RightIndex_rot2=rotxyz(RightWrist2,RightIndex2)        #右手首中指角度
+    RightPinky_rot2=rotxyz(RightWrist2,RightPinky2)        #右手首小指角度
     #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    #ーーーーーーーーーーーーーーーーーーーーーーーーー
-    #ーーーーーーーーーーーーーーーーーーーーーーーーー
-    #ーーーーーーーーーーーーーーーーーーーーーーーーー
-    #ーーーーーーーーーーーーーーーーーーーーーーーーー
-    #ーーーーーーーーーーーーーーーーーーーーーーーーー
-    #ーーーーーーーーーーーーーーーーーーーーーーーーー
-    #ーーーーーーーーーーーーーーーーーーーーーーーーー
+
     #ーーーーーーーーーーーーーーーーーーーーーーーーー
     #骨格形成
-    Base_out=((LHip+RHip)/2)#腰(左右腰の中間)
+    Base_out=((LHip+RHip)/2)#腰(左右腰の中間)（これが中心なのでマスターデータ側の座標に合わせる）
     LHip_out=vectorSet(Base_out,LeftHip2,LeftHip2)# 腰(左側)
     RHip_out=vectorSet(Base_out,RightHip2,RightHip)# 腰(右側)
     Heart_out=vectorSet(Base_out,Heart2,Heart)#胸（絶対位置）
@@ -498,29 +532,69 @@ for index, (landmarks1,landmarks2) in enumerate(zip(frames1,frames2)):
               RShoulder_out,RElbow_out,RWrist_out,RThumb_out,RIndex_out,RPinky_out#19~24
               ]
     
+    #角度リスト
+    rot_lists=[
+        LeftHip_rot,[LeftKnee_rot,LeftKnee_rot_2],LeftAnkle_rot,LeftToes_rot,LeftHeel_rot,#左下半身
+        RightHip_rot,[RightKnee_rot,RightKnee_rot_2],RightAnkle_rot,RightToes_rot,RightHeel_rot,#右下半身
+        Heart_rot,Nose_rot,
+        LeftShoulder_rot,[LeftElbow_rot,LeftElbow_rot_2],LeftWrist_rot,LeftThumb_rot,LeftIndex_rot,LeftPinky_rot,#左上半身
+        RightShoulder_rot,[RightElbow_rot,RightElbow_rot_2],RightWrist_rot,RightThumb_rot,RightIndex_rot,RightPinky_rot#右上半身
+    ]    
+    
+    #角度リスト
+    rot_lists2=[
+        LeftHip_rot2,[LeftKnee_rot2,LeftKnee_rot2_2],LeftAnkle_rot2,LeftToes_rot2,LeftHeel_rot2,#左下半身
+        RightHip_rot2,[RightKnee_rot2,RightKnee_rot2_2],RightAnkle_rot2,RightToes_rot2,RightHeel_rot2,#右下半身
+        Heart_rot2,Nose_rot2,
+        LeftShoulder_rot2,[LeftElbow_rot2,LeftElbow_rot2_2],LeftWrist_rot2,LeftThumb_rot2,LeftIndex_rot2,LeftPinky_rot2,#左上半身
+        RightShoulder_rot2,[RightElbow_rot2,RightElbow_rot2_2],RightWrist_rot2,RightThumb_rot2,RightIndex_rot2,RightPinky_rot2#右上半身
+    ]
 
 
     #モーション作成
     Motions_1.append(out_list_1)
     Motions_2.append(out_list_2)
+    Motions_rot1.append(rot_lists)
+    Motions_rot2.append(rot_lists2)
 
 print("モーション計算完了")
 
 #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-#ポーズ判定用
-def poseCheck(landmarks1,landmarks2):
-    badlist=[]
-    print(len(landmarks1))
-    print(len(landmarks2))
+#ポーズ判定用（座標）
+def poseCheck_xyz(landmarks1,landmarks2):
+
+    length_list=[0]*len(landmarks1)
     
     for index,(landmark1,landmark2) in enumerate(zip(landmarks1,landmarks2)):
-        print("インデックスは"+str(index))
+        dif=0
         #教師生徒間の同部位の距離を計算
         dif=np.linalg.norm(landmark1-landmark2)
-        #間違っている部位はリストに入れる
-        if dif>0.1:
-            badlist.append(index)
-    return badlist
+
+        #長さをリストにいれる
+        length_list[index]=dif
+
+    return length_list
+
+#ポーズ判定用（角度）
+def poseCheck_rot(rot1,rot2):
+
+    length_list=[0]*len(rot1)
+
+    for index,(r1,r2) in enumerate(zip(rot1,rot2)):
+        dif=0
+        if type(r1)==list:
+            for i in range(len(r1)):
+                dif=max(dif,r1[i]-r2[i])
+
+        else:   
+            #教師生徒間の同部位の距離を計算
+            dif=r1-r2
+
+        #角度をリストにいれる
+        length_list[index]=dif
+
+
+    return length_list
     
 def pose_index_set(pose_index_list,landmark_point):
     pose_x,pose_y,pose_z=[],[],[]
@@ -532,36 +606,49 @@ def pose_index_set(pose_index_list,landmark_point):
 
     return pose_x,pose_y,pose_z
 
+def PlotAndColor(bonelist,ax,badlist,good_color,bad_color,isMaster,isbad):
+    #*****************************************************************************
+    #
+    # bonelist:boneのxyz座標のリスト。[[x1,y1,z1],[x2,y2,z2],[x2,y2,z2],.....]のようになっており、
+    # 座標1と2、2と3、3と4をそれぞれ繋いでいく
+    # ax :pltの表示用
+    # badlist:  座標がマスターの規定値よりずれているリスト
+    # good_color:   合っている時の表示色
+    # bad_color:    ずれている時の表示色
+    # isMaster: マスターデータかどうか、マスターデータならすべて合っている判定
+    # isbad :   親の骨格がずれているかどうか、ずれているならすべて間違っている判定
+    #
+    #*****************************************************************************
+    
+    parent_isbad=False #親ボーンが間違っているか
+    for [i,[bone_x, bone_y, bone_z]] in bonelist:
+
+        #マスターデータの場合、すべてデフォルト色で表示
+        if isMaster:
+            ax.plot(bone_x, bone_y, bone_z,color=good_color)
+            continue
+
+        if isbad:
+            ax.plot(bone_x, bone_y, bone_z,color=bad_color)
+            continue
+
+        #間違っているリストにある。もしくは親ボーンが間違っている場合、赤色で表示
+        if badlist[i] or parent_isbad:
+            ax.plot(bone_x, bone_y, bone_z,color=bad_color)
+            parent_isbad=True
+        else:
+            ax.plot(bone_x, bone_y, bone_z,color=good_color)
+            
+        
+    return parent_isbad
 
 #ポーズ描画用
-def poseDraw(plt,ax,landmarks,visibility_th=0.5,badlist=[],pose_color="red"):
+def poseDraw(plt,ax,landmarks,visibility_th=0.5,badlist=[],pose_color="red",isMaster=False):
     landmark_point = []#有効性、xyz座標
 
     for index, landmark in enumerate(landmarks):
         landmark_point.append(
-            [1, (landmark[0], landmark[1], landmark[2])])
-
-    #center_index_list = [0, 11,12]#腰、胸、鼻
-    #right_arm_index_list = [11, 19, 20, 21, 22, 23, 24] #胸、肩、肘、手首、外側端(小指)、先端(中指)、内側端(親指)
-    #left_arm_index_list = [11, 13, 14, 15, 16, 17, 18]  #胸、肩、肘、手首、外側端(小指)、先端(中指)、内側端(親指)
-    #right_reg_side_index_list = [0, 6, 7, 8, 10, 9] #腰、尻、膝、足首、足先、かかと
-    #left_reg_side_index_list = [0, 1, 2, 3, 5,4]    #腰、尻、膝、足首、足先、かかと
-    """
-    # 顔
-    center_x, center_y, center_z =pose_index_set(center_index_list,landmark_point)
-
-    # 右腕
-    right_arm_x, right_arm_y, right_arm_z =pose_index_set(right_arm_index_list,landmark_point)
-
-    # 左腕
-    left_arm_x, left_arm_y, left_arm_z = pose_index_set(left_arm_index_list,landmark_point)
-
-    # 右半身
-    right_body_side_x, right_body_side_y, right_body_side_z = pose_index_set(right_reg_side_index_list,landmark_point)
-
-    # 左半身
-    left_body_side_x, left_body_side_y, left_body_side_z = pose_index_set(left_reg_side_index_list,landmark_point)
-    """
+            [index, (landmark[0], landmark[1], landmark[2])])
 
     nose_index = [11, 12]#胸、鼻
     spine_index = [0, 11]#腰、胸
@@ -592,71 +679,127 @@ def poseDraw(plt,ax,landmarks,visibility_th=0.5,badlist=[],pose_color="red"):
     right_heel_index = [8, 9] #足首、足先
     right_toes_index = [8, 10] #足首、かかと
 
+    #各座標をリスト化(0=x,1=y,2=z)
 
     #背骨、鼻
-    nose_x, nose_y, nose_z =pose_index_set(nose_index,landmark_point)
-    spine_x, spine_y, spine_z =pose_index_set(spine_index,landmark_point)
+    nose_bone=pose_index_set(nose_index,landmark_point)
+    spine_bone =pose_index_set(spine_index,landmark_point)
+
+    
     #肩
-    left_Shoulder_x, left_Shoulder_y, left_Shoulder_z =pose_index_set(left_Shoulder_index,landmark_point)
-    right_Shoulder_x, right_Shoulder_y, right_Shoulder_z =pose_index_set(right_Shoulder_index,landmark_point)
+    left_Shoulder_bone =pose_index_set(left_Shoulder_index,landmark_point)
+    right_Shoulder_bone =pose_index_set(right_Shoulder_index,landmark_point)
     #上腕
-    left_upArm_x, left_upArm_y, left_upArm_z =pose_index_set(left_upArm_index,landmark_point)
-    right_upArm_x, right_upArm_y, right_upArm_z =pose_index_set(right_upArm_index,landmark_point)
+    left_upArm_bone =pose_index_set(left_upArm_index,landmark_point)
+    right_upArm_bone =pose_index_set(right_upArm_index,landmark_point)
     #前腕
-    left_arm_x, left_arm_y, left_arm_z =pose_index_set(left_arm_index,landmark_point)
-    right_arm_x, right_arm_y, right_arm_z =pose_index_set(right_arm_index,landmark_point)
+    left_arm_bone =pose_index_set(left_arm_index,landmark_point)
+    right_arm_bone =pose_index_set(right_arm_index,landmark_point)
     #親指
-    left_thumb_x, left_thumb_y, left_thumb_z =pose_index_set(left_thumb_index,landmark_point)
-    right_thumb_x, right_thumb_y, right_thumb_z =pose_index_set(right_thumb_index,landmark_point)
+    left_thumb_bone =pose_index_set(left_thumb_index,landmark_point)
+    right_thumb_bone =pose_index_set(right_thumb_index,landmark_point)
     #小指
-    left_pinky_x, left_pinky_y, left_pinky_z =pose_index_set(left_pinky_index,landmark_point)
-    right_pinky_x, right_pinky_y, right_pinky_z =pose_index_set(right_pinky_index,landmark_point)
+    left_pinky_bone =pose_index_set(left_pinky_index,landmark_point)
+    right_pinky_bone =pose_index_set(right_pinky_index,landmark_point)
     #中指
-    left_index_x, left_index_y, left_index_z =pose_index_set(left_index_index,landmark_point)
-    right_index_x, right_index_y, right_index_z =pose_index_set(right_index_index,landmark_point)
+    left_index_bone =pose_index_set(left_index_index,landmark_point)
+    right_index_bone =pose_index_set(right_index_index,landmark_point)
+
+
+    
     #尻
-    left_hip_x, left_hip_y, left_hip_z =pose_index_set(left_hip_index,landmark_point)
-    right_hip_x, right_hip_y, right_hip_z =pose_index_set(right_hip_index,landmark_point)
+    left_hip_bone =pose_index_set(left_hip_index,landmark_point)
+    right_hip_bone =pose_index_set(right_hip_index,landmark_point)
     #上足
-    left_upReg_x, left_upReg_y, left_upReg_z =pose_index_set(left_upReg_index,landmark_point)
-    right_upReg_x, right_upReg_y, right_upReg_z =pose_index_set(right_upReg_index,landmark_point)
+    left_upReg_bone =pose_index_set(left_upReg_index,landmark_point)
+    right_upReg_bone =pose_index_set(right_upReg_index,landmark_point)
     #下足
-    left_reg_x, left_reg_y, left_reg_z =pose_index_set(left_reg_index,landmark_point)
-    right_reg_x, right_reg_y, right_reg_z =pose_index_set(right_reg_index,landmark_point)
+    left_reg_bone =pose_index_set(left_reg_index,landmark_point)
+    right_reg_bone =pose_index_set(right_reg_index,landmark_point)
     #つま先
-    left_toes_x, left_toes_y, left_toes_z =pose_index_set(left_toes_index,landmark_point)
-    right_toes_x, right_toes_y, right_toes_z =pose_index_set(right_toes_index,landmark_point)
+    left_toes_bone =pose_index_set(left_toes_index,landmark_point)
+    right_toes_bone =pose_index_set(right_toes_index,landmark_point)
     #かかと
-    left_heel_x, left_heel_y, left_heel_z =pose_index_set(left_heel_index,landmark_point)
-    right_heel_x, right_heel_y, right_heel_z =pose_index_set(right_heel_index,landmark_point)
+    left_heel_bone =pose_index_set(left_heel_index,landmark_point)
+    right_heel_bone =pose_index_set(right_heel_index,landmark_point)
+
+    #＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+
+    #骨リストを作成。
+    #
+    #[骨のインデックス,骨の座標リスト]
+    #
+    spine_bonelist=[[11, spine_bone]]
+    nose_bonelist=[[12, nose_bone]]
+    #左上半身_骨リスト
+    up_left_bonelist=[[13, left_Shoulder_bone],[14, left_upArm_bone],[15, left_arm_bone]]
+    #左手指_骨リスト
+    left_finger_bonelist=[[16, left_pinky_bone],[17, left_index_bone],[18, left_thumb_bone]]
+
+    #右上半身_骨リスト
+    up_right_bonelist=[[19, right_Shoulder_bone],[20, right_upArm_bone],[21, right_arm_bone]]
+    #右手指_骨リスト
+    right_finger_bonelist=[[22, right_pinky_bone],[23, right_index_bone],[24, right_thumb_bone]]
+
+    #左下半身_骨リスト
+    down_left_bonelist=[[1, left_hip_bone],[2, left_upReg_bone],[3, left_reg_bone]]
+    #左つま先かかと_骨リスト
+    left_toesheel_bonelist=[[4, left_toes_bone],[5, left_heel_bone]]
+
+    #右下半身_骨リスト
+    down_right_bonelist=[[6, right_hip_bone],[7, right_upReg_bone],[8, right_reg_bone]]
+    #右つま先かかと_骨リスト
+    right_toesheel_bonelist=[[9, right_toes_bone],[10, right_heel_bone]]
 
 
-    bad01_list=[0]*25    #合否を01で判定。0があっている、1が間違っているもの、
-
-        
-
-
-    #ax.cla()            #グラフをクリア
     ax.set_xlim3d(-1, 1)
     ax.set_ylim3d(-1, 1)
     ax.set_zlim3d(-1, 1)
+
     #pltで表示
     #scatterが点、plotが線で繋ぐ
-    if len(badlist)>0:
-        print("aaa")
-    #ax.scatter(center_x, center_y, center_z,color="red")
-    ax.plot(center_x, center_y, center_z,color=pose_color)
-    ax.plot(right_arm_x, right_arm_y, right_arm_z,color=pose_color)
-    ax.plot(left_arm_x, left_arm_y, left_arm_z,color=pose_color)
-    ax.plot(right_body_side_x, right_body_side_y, right_body_side_z,color=pose_color)
-    ax.plot(left_body_side_x, left_body_side_y, left_body_side_z,color=pose_color)
+    bad_color="red"
+
+    #背骨
+    isSpine=PlotAndColor(spine_bonelist,ax,badlist,pose_color,bad_color,isMaster,False)
+    #鼻
+    PlotAndColor(nose_bonelist,ax,badlist,pose_color,bad_color,isMaster,isSpine)
+
+    #左上半身
+    isUpLeft=PlotAndColor(up_left_bonelist,ax,badlist,pose_color,bad_color,isMaster,isSpine)
+    #右上半身
+    isUpRight=PlotAndColor(up_right_bonelist,ax,badlist,pose_color,bad_color,isMaster,isSpine)
+
+    #左下半身
+    isDownLeft=PlotAndColor(down_left_bonelist,ax,badlist,pose_color,bad_color,isMaster,False)
+    #右下半身
+    isDownRight=PlotAndColor(down_right_bonelist,ax,badlist,pose_color,bad_color,isMaster,False)
+
+    #左指
+    PlotAndColor(left_finger_bonelist,ax,badlist,pose_color,bad_color,isMaster,isUpLeft)
+    #右指
+    PlotAndColor(right_finger_bonelist,ax,badlist,pose_color,bad_color,isMaster,isUpRight)   
+
+    #つま先かかと
+    PlotAndColor(right_toesheel_bonelist,ax,badlist,pose_color,bad_color,isMaster,isDownLeft)
+    #つま先かかと
+    PlotAndColor(left_toesheel_bonelist,ax,badlist,pose_color,bad_color,isMaster,isDownRight)
+
 
     plt.xlabel('X-label')
     plt.ylabel('Z-label')
-    
 
     return
 
+#良し悪しを判定する
+def isGood(lists,bad):
+    l=[bad]*len(lists)
+    out=[False]*len(lists)
+    for i in range(len(lists)):
+        if lists[i]>l[i]:
+            out[i]=True
+
+    return out
 
 # World座標プロット ########################################################
 #if plot_world_landmark:
@@ -665,16 +808,33 @@ fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
 fig.subplots_adjust(left=0.0, right=1, bottom=0, top=1)
 
-for motion_1,motion_2 in zip(Motions_1,Motions_2): 
-    badlist=poseCheck(motion_1,motion_2)
-    print(badlist)
-    print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+for motion_1,motion_2,rot1,rot2 in zip(Motions_1,Motions_2,Motions_rot1,Motions_rot2):
+
+    #座標がずれている地点を取得 
+    length_list=poseCheck_xyz(motion_1,motion_2)
+
+    #角度がずれている点を取得
+    length_rot_list=poseCheck_rot(rot1,rot2)
+
+
+
+    score=0
+
+
     
+    #描画のための処理ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+    #角度か位置、どちらかがズレていれば間違いにする
+    badlist=isGood(length_list,0.1) or isGood(length_rot_list,10)
+
     #描画
-    poseDraw(plt,ax,motion_1,badlist=badlist,pose_color="grey")
-    poseDraw(plt,ax,motion_2,badlist=badlist,pose_color="chartreuse")
-    plt.pause(.001)
+    poseDraw(plt,ax,motion_1,badlist=badlist,pose_color="grey",isMaster=True)
+    poseDraw(plt,ax,motion_2,badlist=badlist,pose_color="chartreuse",isMaster=False)
+
+    plt.pause(.0001)
+
+    #グラフ表示をクリア
     ax.cla()
+
     if keyboard.is_pressed('escape'):
         print("中断")
         ax.cla()

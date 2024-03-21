@@ -1,0 +1,38 @@
+
+    #左下半身
+    LeftHip_rot2=rotxyz(VectorUp,LeftHip)        #左尻角度
+    LeftKnee_rot2=rotxyz(LeftHip,LeftKnee)       #左足付け根角度
+    LeftKnee_rot2_2=rotxyz(-LeftSide,LeftKnee)       #左足付け根角度2(Leftsideは尻→肩なので逆にする)
+    LeftAnkle_rot2=rotxyz(LeftKnee,LeftAnkle)    #左ひざ角度
+    LeftToes_rot2=rotxyz(LeftAnkle,LeftToes)     #左足首つま先角度
+    LeftHeel_rot2=rotxyz(LeftAnkle,LeftHeel)     #左足首かかと角度
+
+    #右下半身
+    RightHip_rot2=rotxyz(VectorUp,RightHip)          #右尻角度
+    RightKnee_rot2=rotxyz(RightHip,RightKnee)        #右ひざ角度
+    RightKnee_rot2_2=rotxyz(RightSide,RightKnee)        #右ひざ角度
+    RightAnkle_rot2=rotxyz(RightKnee,RightAnkle)     #右足首角度
+    RightToes_rot2=rotxyz(RightAnkle,RightToes)      #右足首つま先角度
+    RightHeel_rot2=rotxyz(RightToes,RightHeel)       #右足首かかと角度
+
+    #上半身
+    Heart_rot2=rotxyz(VectorUp,Heart)    #心臓角度
+    Nose_rot2=rotxyz(Heart,Nose)         #鼻角度
+
+    #左上半身
+    LeftShoulder_rot2=rotxyz(Heart,LeftShoulder)     #左までの角度 
+    LeftElbow_rot2=rotxyz(LeftShoulder,LeftElbow)    #左腕付け根角度
+    LeftElbow_rot2_2=rotxyz(LeftSide,LeftElbow)    #左腕付け根角度2
+    LeftWrist_rot2=rotxyz(LeftElbow,LeftWrist)       #左ひじ角度
+    LeftThumb_rot2=rotxyz(LeftWrist,LeftThumb)       #左手首親指角度
+    LeftIndex_rot2=rotxyz(LeftWrist,LeftIndex)       #左手首中指角度
+    LeftPinky_rot2=rotxyz(LeftWrist,LeftPinky)       #左手首小指角度
+
+    #右上半身
+    RightShoulder_rot2=rotxyz(Heart,RightShoulder)       #右肩までの角度 
+    RightElbow_rot2=rotxyz(RightShoulder,RightElbow)     #右腕付け根角度
+    RightElbow_rot2_2=rotxyz(RightSide,RightElbow)     #右腕付け根角度2
+    RightWrist_rot2=rotxyz(RightElbow,RightWrist)        #右ひじ角度
+    RightThumb_rot2=rotxyz(RightWrist,RightThumb)        #右手首親指角度
+    RightIndex_rot2=rotxyz(RightWrist,RightIndex)        #右手首中指角度
+    RightPinky_rot2=rotxyz(RightWrist,RightPinky)        #右手首小指角度
