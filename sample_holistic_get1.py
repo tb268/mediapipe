@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#python3 sample_holistic_get2.py --plot_world_landmark
+#python3 sample_holistic_get1.py （動画ファイル名） （マスターデータなら -m 1 にする）
+
+#例：
+#python3 sample_holistic_get1.py harehare.mp4 -m 1
+
+#python3 sample_holistic_get1.py --plot_world_landmark
 #xが左右、yが奥行き、zが上下
 #行動取得用
 
@@ -14,6 +19,7 @@ import csv
 from utils import CvFpsCalc
 from sqltest import sql_set
 import time
+import sys
 
 
 from tqdm import tqdm
@@ -73,6 +79,11 @@ def cal_slope_for_vector(a_0,a_1,c_0,c_1):
 def get_args():
     parser = argparse.ArgumentParser()
 
+    #動画ファイル名。一番最初の引数に指定
+    parser.add_argument('movie_file', help='動画ファイル名。一番最初の引数に指定')
+    parser.add_argument('-m', '--ismaster', default='0', type=int, help='マスターファイルかどうか、1ならマスターファイルとして扱う。指定しなくても良い。指定しないとマスターでなくなる')
+
+
     parser.add_argument("--device", type=int, default=0)
     parser.add_argument("--width", help='cap width', type=int, default=960)
     parser.add_argument("--height", help='cap height', type=int, default=540)
@@ -100,6 +111,8 @@ def get_args():
 
     parser.add_argument('--use_brect', action='store_true')
     parser.add_argument('--plot_world_landmark', action='store_true')
+    
+
 
     args = parser.parse_args()
 
@@ -142,11 +155,28 @@ def main():
     plot_world_landmark = args.plot_world_landmark
 
     # カメラ準備 ###############################################################
-    #cap = cv2.VideoCapture(cap_device)
-    cap=cv2.VideoCapture('harehare.mp4')
-    #cap=cv2.VideoCapture('testm.mp4')
+ 
+
+    video_file=args.movie_file  #ビデオファイル名
+ 
+    isMaster=False     #マスターファイルにするかどうか
+    
+    masterCheck=args.ismaster    #マスターファイルかどうか
+
+    if masterCheck==1:
+        isMaster=True
+
+    elif masterCheck==0:
+        isMaster=False
+
+
+
+    
+    cap=cv2.VideoCapture(video_file)    #動画取得
+
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, cap_width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, cap_height)
+    
 
     # モデルロード #############################################################
     mp_holistic = mp.solutions.holistic
@@ -171,13 +201,15 @@ def main():
         ax = fig.add_subplot(111, projection="3d")
         fig.subplots_adjust(left=0.0, right=1, bottom=0, top=1)
 
-    
+    FPS=cap.get(cv2.CAP_PROP_FPS)
+
     isFirst=True #最初のフレームかどうか（BDテーブル削除用）
 
     with tqdm() as pbar: #進捗状況取得用#############################
         while True:
             pbar.update(1)
             display_fps = cvFpsCalc.get()
+            
 
             # カメラキャプチャ #####################################################
             ret, image = cap.read()
@@ -245,11 +277,27 @@ def main():
             with open("./posedata.csv","a") as f:
                 writer=csv.writer(f)
                 writer.writerow(landmark_point)#有効性、xyz座標
+
             now=time.time()
+
+            if isMaster:
+                sql_table_name="pose1"
+
+            else:
+                sql_table_name="pose2"
+
+            #現在時間を取得(ミリ秒単位なので1/1000で秒単位になる)
+            nowtime = cap.get(cv2.CAP_PROP_POS_MSEC)
+            #print("＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝")
+            #print("フレーム数："+str(FPS))
+            #print(str(nowtime/1000)+"秒")
+
             #sql書き込み。最初のフレームならDBクリア
-            sql_set(now,landmark_point,"pose1",isFirst)
+            sql_set(now,landmark_point,sql_table_name,isFirst,nowtime)
+
             
             isFirst=False
+
             # Hands ###############################################################
             """
             left_hand_landmarks = results.left_hand_landmarks

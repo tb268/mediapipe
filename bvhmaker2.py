@@ -2,7 +2,7 @@
 
 # Defining the structure of the BVH file with Japanese comments
 #bvhファイル作成用システム
-
+#sudo python3 bvhmaker2.py
 #blenderのインポートエラーで「could not convert string to float: Zrotation」が出る時→中括弧などX改行が原因
 
 #xzyの順番で座標が入っている、yが上
@@ -12,6 +12,8 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import keyboard
+from tensortest import ScoreLearning
+import sys
 
 #np配列をスペースありのstring文字列に変換
 def np2str(array):
@@ -183,6 +185,7 @@ c2.execute("select * from pose2")#生徒データ
 #テーブル呼び出し
 frames1 = c1.fetchall()
 frames2 = c2.fetchall()
+print(frames1[0])
 
 VectorUp=np.array([0,0,0])#上ベクトル
 
@@ -518,7 +521,7 @@ for index, (landmarks1,landmarks2) in enumerate(zip(frames1,frames2)):
             Base,
               LHip,LKnee,LAnkle,LToes,LHeel,
               RHip,RKnee,RAnkle,RToes,RHeel,
-              Heart,Nose,
+              HeartAbsol,NoseAbsol,
               LShoulder,LElbow,LWrist,LThumb,LIndex,LPinky,
               RShoulder,RElbow,RWrist,RThumb,RIndex,RPinky
               ]
@@ -808,6 +811,8 @@ fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
 fig.subplots_adjust(left=0.0, right=1, bottom=0, top=1)
 
+train_data=[]
+
 for motion_1,motion_2,rot1,rot2 in zip(Motions_1,Motions_2,Motions_rot1,Motions_rot2):
 
     #座標がずれている地点を取得 
@@ -816,15 +821,21 @@ for motion_1,motion_2,rot1,rot2 in zip(Motions_1,Motions_2,Motions_rot1,Motions_
     #角度がずれている点を取得
     length_rot_list=poseCheck_rot(rot1,rot2)
 
+    #座標差、角度差を連結
+    #r=np.concatenate(length_list,length_rot_list)
 
+    train_data.append(length_list)
 
-    score=0
+    
+
 
 
     
     #描画のための処理ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
     #角度か位置、どちらかがズレていれば間違いにする
-    badlist=isGood(length_list,0.1) or isGood(length_rot_list,10)
+    zahyou = isGood(length_list,0.1)
+    rot = isGood(length_rot_list,10)
+    badlist= zahyou or rot 
 
     #描画
     poseDraw(plt,ax,motion_1,badlist=badlist,pose_color="grey",isMaster=True)
@@ -838,14 +849,11 @@ for motion_1,motion_2,rot1,rot2 in zip(Motions_1,Motions_2,Motions_rot1,Motions_
     if keyboard.is_pressed('escape'):
         print("中断")
         ax.cla()
+        sys.exit()
         break
 
+#score=ScoreLearning(np.array(length_list),score_est)
 
-
-
-
-
-
-
-
+score_est=np.array([8]*len(train_data)) #ユーザーの推定したスコア
+score=ScoreLearning(np.array(train_data),score_est)
 

@@ -4,7 +4,7 @@
 import sqlite3
 import json
 #
-def sql_set(times,landmark_point,pose,isFirst):
+def sql_set(times,landmark_point,pose,isFirst,FPS):
     #DBの名前。同一ディレクトリ内に生成
     dbname = 'main.db'
 
@@ -28,7 +28,7 @@ def sql_set(times,landmark_point,pose,isFirst):
         # 完全なテーブル作成クエリを構築
         #DB内にposeテーブルがない時に作成
         
-        cur.execute(f"CREATE TABLE IF NOT EXISTS {pose} (id INTEGER PRIMARY KEY,data TEXT)")
+        cur.execute(f"CREATE TABLE IF NOT EXISTS {pose} (id INTEGER PRIMARY KEY,data TEXT,time REAL)")
         # データ登録
         # 挿入したい50個のデータ（例）
         data = landmark_point  # このタプルに50個の要素が含まれていると仮定
@@ -36,7 +36,7 @@ def sql_set(times,landmark_point,pose,isFirst):
         # 配列全体をJSON文字列に変換
         json_data = json.dumps(data)
 
-        # データベースに挿入
+        # データベースに挿入（ここがまだ）
         cur.execute(f"INSERT INTO {pose} (data) VALUES (?);", (json_data,))
 
         # 複数データ登録

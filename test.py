@@ -1,10 +1,14 @@
 import numpy as np
 
-landmarks1=np.array([1,2,3])
-landmarks2=np.array([1,11,3])
-landmarks3=np.array([4,5,6])
-landmarks4=np.array([4,33,6])
+# リストのリストを作成
+data = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 
-x=[-landmarks1,-landmarks2]
-y=[landmarks3,landmarks4]
-print(x)
+# NumPy配列に変換
+array = np.array(data)
+
+# 出力
+print(type(array[0]))
+
+# [[1 2 3]
+#  [4 5 6]
+#  [7 8 9]]
