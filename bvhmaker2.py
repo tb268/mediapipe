@@ -179,7 +179,7 @@ def fps_set(frames,fps):
     t=0
     while t<total_time:
         sublist=[]
-        while True:
+        while t<total_time:
             if frames[l][2]<=t<frames[l+1][2]:
                 time=frames[l+1][2]-frames[l][2]
                 m1=abs(frames[l+1][2]%time)
@@ -188,7 +188,7 @@ def fps_set(frames,fps):
                 pose=[]
                 #print(frames[l][1])
                 pose=(np.array(frames[l][1])*(m1)+(np.array(frames[l+1][1])*(m2)))/time
-                print(frames[l+1][2]-time)
+                
                 
                 sublist.append(n)       #インデックス
                 sublist.append(pose)   #ポーズリスト
@@ -199,10 +199,12 @@ def fps_set(frames,fps):
                 
             else:
                 l+=1
+        
+        n+=1
+        #秒数指定、誤差がある場合調整する必要あり
         t+=1000/fps
         outlist.append(sublist)
         
-        n+=1
 
     return outlist
 
@@ -242,14 +244,13 @@ while True:
     frames1.append([str(row1[0][0]),eval(row1[0][1]),float(row1[0][2])])
     frames2.append([str(row2[0][0]),eval(row2[0][1]),float(row2[0][2])])
     
-#print(frames1)
 
 
+print(frames1[-1][2])
 #nフレームの形に形成（30フレーム）
 frames1=fps_set(frames1,30)
 frames2=fps_set(frames2,30)
 
-#print(frames1[0])
 
 
 
@@ -261,14 +262,13 @@ Motions_2=[]
 Motions_rot1=[]
 Motions_rot2=[]
 
-#print(frames1)
 
 
 #フレームごとに取得
 for index, (landmarks1,landmarks2) in enumerate(zip(frames1,frames2)):
 
     landmark=(landmarks1[1])
-    #print(landmark)
+    
     #教師の位置の設定。（L,Rは絶対位置、Left,Rightは相対位置）
     #部位ごとに取得＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
     NoseAbsol=np.array(landmark[0])# 鼻
