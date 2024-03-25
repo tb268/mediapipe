@@ -1,38 +1,26 @@
-
-    #左下半身
-    LeftHip_rot2=rotxyz(VectorUp,LeftHip)        #左尻角度
-    LeftKnee_rot2=rotxyz(LeftHip,LeftKnee)       #左足付け根角度
-    LeftKnee_rot2_2=rotxyz(-LeftSide,LeftKnee)       #左足付け根角度2(Leftsideは尻→肩なので逆にする)
-    LeftAnkle_rot2=rotxyz(LeftKnee,LeftAnkle)    #左ひざ角度
-    LeftToes_rot2=rotxyz(LeftAnkle,LeftToes)     #左足首つま先角度
-    LeftHeel_rot2=rotxyz(LeftAnkle,LeftHeel)     #左足首かかと角度
-
-    #右下半身
-    RightHip_rot2=rotxyz(VectorUp,RightHip)          #右尻角度
-    RightKnee_rot2=rotxyz(RightHip,RightKnee)        #右ひざ角度
-    RightKnee_rot2_2=rotxyz(RightSide,RightKnee)        #右ひざ角度
-    RightAnkle_rot2=rotxyz(RightKnee,RightAnkle)     #右足首角度
-    RightToes_rot2=rotxyz(RightAnkle,RightToes)      #右足首つま先角度
-    RightHeel_rot2=rotxyz(RightToes,RightHeel)       #右足首かかと角度
-
-    #上半身
-    Heart_rot2=rotxyz(VectorUp,Heart)    #心臓角度
-    Nose_rot2=rotxyz(Heart,Nose)         #鼻角度
-
-    #左上半身
-    LeftShoulder_rot2=rotxyz(Heart,LeftShoulder)     #左までの角度 
-    LeftElbow_rot2=rotxyz(LeftShoulder,LeftElbow)    #左腕付け根角度
-    LeftElbow_rot2_2=rotxyz(LeftSide,LeftElbow)    #左腕付け根角度2
-    LeftWrist_rot2=rotxyz(LeftElbow,LeftWrist)       #左ひじ角度
-    LeftThumb_rot2=rotxyz(LeftWrist,LeftThumb)       #左手首親指角度
-    LeftIndex_rot2=rotxyz(LeftWrist,LeftIndex)       #左手首中指角度
-    LeftPinky_rot2=rotxyz(LeftWrist,LeftPinky)       #左手首小指角度
-
-    #右上半身
-    RightShoulder_rot2=rotxyz(Heart,RightShoulder)       #右肩までの角度 
-    RightElbow_rot2=rotxyz(RightShoulder,RightElbow)     #右腕付け根角度
-    RightElbow_rot2_2=rotxyz(RightSide,RightElbow)     #右腕付け根角度2
-    RightWrist_rot2=rotxyz(RightElbow,RightWrist)        #右ひじ角度
-    RightThumb_rot2=rotxyz(RightWrist,RightThumb)        #右手首親指角度
-    RightIndex_rot2=rotxyz(RightWrist,RightIndex)        #右手首中指角度
-    RightPinky_rot2=rotxyz(RightWrist,RightPinky)        #右手首小指角度
+    NoseAbsol2=np.array(landmark[0])# 鼻
+    LHip2=np.array(landmark[23])# 腰(左側)
+    RHip2=np.array(landmark[24])# 腰(右側)
+    Base2=((LHip2+RHip2)/2)#腰(左右腰の中間)
+    #上半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+    LShoulder2=np.array(landmark[11])# 左肩
+    RShoulder2=np.array(landmark[12])# 右肩
+    LElbow2=np.array(landmark[13])# 左肘
+    RElbow2=np.array(landmark[14])# 右肘
+    LWrist2=np.array(landmark[15])# 左手首
+    RWrist2=np.array(landmark[16])# 右手首
+    LPinky2=np.array(landmark[17])# 左子指
+    RPinky2=np.array(landmark[18])# 右子指
+    LIndex2=np.array(landmark[19])# 左人差し指
+    RIndex2=np.array(landmark[20])# 左人差し指
+    LThumb2=np.array(landmark[21])# 左親指
+    RThumb2=np.array(landmark[22])# 右親指
+    #下半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+    LKnee2=np.array(landmark[25])# 左ひざ
+    RKnee2=np.array(landmark[26])# 右ひざ
+    LAnkle2=np.array(landmark[27])# 左足首
+    RAnkle2=np.array(landmark[28])# 右足首
+    LHeel2=np.array(landmark[29])# 左かかと
+    RHeel2=np.array(landmark[30])# 右かかと
+    LToes2=np.array(landmark[31])# 左つま先
+    RToes2=np.array(landmark[32])# 右つま先

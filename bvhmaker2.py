@@ -12,7 +12,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import keyboard
-from tensortest import ScoreLearning
+#from tensortest import ScoreLearning
 import sys
 
 #np配列をスペースありのstring文字列に変換
@@ -96,7 +96,7 @@ def rotxyz2(vec_before,vec_after):
         rot=1
     rot=math.acos(rot)
     deg=math.degrees(rot)
-    print(xInner/(vec1Len*vec2Len))
+    #print(xInner/(vec1Len*vec2Len))
     #Deg=math.degrees(rot)
     #Deg=round(Deg, 3)
     #回転方向を計算
@@ -116,7 +116,6 @@ def rotxyz2(vec_before,vec_after):
     # 外積を求める
     cross_product = np.cross(vec_before2, vec_after2)
     
-    print(cross_product)
     # y成分が正なら反時計回り、負なら時計回り
     if cross_product > 0:
         r=1
@@ -128,7 +127,6 @@ def rotxyz2(vec_before,vec_after):
 
 #vec_before,2の垂線を外積で取得
 def get_forwardvec(vec_before,vec_after):
-
     out=np.cross(vec_before,vec_after)
     #高さは0で前方ベクトルを取得 
     out[1]=0
@@ -168,6 +166,49 @@ def vectorSet(start,vec_in,vec_out):
 
     return out
 
+#フレーム数を合わせる
+def fps_set(frames,fps):
+    outlist=[]
+
+    #行動のみに変換
+    
+
+    total_time=frames[-1][2]
+    l=0
+    n=0
+    t=0
+    while t<total_time:
+        sublist=[]
+        while True:
+            if frames[l][2]<=t<frames[l+1][2]:
+                time=frames[l+1][2]-frames[l][2]
+                
+                pose=[]
+                for i in range(len(frames)):
+                    pass
+                #print(frames[l][1])
+                pose=(np.array(frames[l][1])*(abs(frames[l+1][2]-time)/time))+(np.array(frames[l][1])*(abs(frames[l][2]-time)/time))
+                
+                
+                sublist.append(n)       #インデックス
+                sublist.append(pose)   #ポーズリスト
+                sublist.append(t)               #経過時間
+
+
+                break
+                
+            else:
+                l+=1
+        t+=1000/fps
+        outlist.append(sublist)
+        
+        n+=1
+
+    return outlist
+
+
+
+#print("ーーーーーーーーーーーーーーーーーーーーーーーーーーーーー")
 #DB取得
 conn = sqlite3.connect(r'main.db')
 #カーソル作成
@@ -180,12 +221,38 @@ c2.execute("select * from pose2")#生徒データ
 
 #データベース取得
 #poselistはフレームごとの情報=====================
-#各フレームには各関節の情報
+#各フレームにはの情報(インデックス、各関節の情報、現在時間の情報）が入っている
 #各関節には[信頼度,(x座標,y座標,z座標)]の情報が入る========
+
+
 #テーブル呼び出し
-frames1 = c1.fetchall()
-frames2 = c2.fetchall()
-print(frames1[0])
+#fetchallで全呼び出しするとtupleで書き換え不可なのでfetchmanyで一つずつ変換して呼び出す
+#frames1 = c1.fetchall()
+#frames2 = c2.fetchall()
+frames1 = []
+frames2 = []
+# 1行ずつlist型で取得
+rows = []
+
+while True:
+    row1 = c1.fetchmany(size=1)
+    row2 = c2.fetchmany(size=1)
+    if not row1 or not row2:
+        break
+    frames1.append([str(row1[0][0]),eval(row1[0][1]),float(row1[0][2])])
+    frames2.append([str(row2[0][0]),eval(row2[0][1]),float(row2[0][2])])
+    
+#print(frames1)
+
+
+#nフレームの形に形成（30フレーム）
+frames1=fps_set(frames1,30)
+frames2=fps_set(frames2,30)
+
+#print(frames1[0])
+
+
+
 
 VectorUp=np.array([0,0,0])#上ベクトル
 
@@ -194,43 +261,46 @@ Motions_2=[]
 Motions_rot1=[]
 Motions_rot2=[]
 
+#print(frames1)
+
 
 #フレームごとに取得
 for index, (landmarks1,landmarks2) in enumerate(zip(frames1,frames2)):
 
-    landmark=eval(landmarks1[1])
-    
+    landmark=(landmarks1[1])
+    #print(landmark)
     #教師の位置の設定。（L,Rは絶対位置、Left,Rightは相対位置）
     #部位ごとに取得＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
-    NoseAbsol=np.array(landmark[0][1])# 鼻
-    LHip=np.array(landmark[23][1])# 腰(左側)
-    RHip=np.array(landmark[24][1])# 腰(右側)
+    NoseAbsol=np.array(landmark[0])# 鼻
+    LHip=np.array(landmark[23])# 腰(左側)
+    RHip=np.array(landmark[24])# 腰(右側)
     Base=((LHip+RHip)/2)#腰(左右腰の中間)
     #上半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    LShoulder=np.array(landmark[11][1])# 左肩
-    RShoulder=np.array(landmark[12][1])# 右肩
-    LElbow=np.array(landmark[13][1])# 左肘
-    RElbow=np.array(landmark[14][1])# 右肘
-    LWrist=np.array(landmark[15][1])# 左手首
-    RWrist=np.array(landmark[16][1])# 右手首
-    LPinky=np.array(landmark[17][1])# 左子指
-    RPinky=np.array(landmark[18][1])# 右子指
-    LIndex=np.array(landmark[19][1])# 左人差し指
-    RIndex=np.array(landmark[20][1])# 左人差し指
-    LThumb=np.array(landmark[21][1])# 左親指
-    RThumb=np.array(landmark[22][1])# 右親指
+    LShoulder=np.array(landmark[11])# 左肩
+    RShoulder=np.array(landmark[12])# 右肩
+    LElbow=np.array(landmark[13])# 左肘
+    RElbow=np.array(landmark[14])# 右肘
+    LWrist=np.array(landmark[15])# 左手首
+    RWrist=np.array(landmark[16])# 右手首
+    LPinky=np.array(landmark[17])# 左子指
+    RPinky=np.array(landmark[18])# 右子指
+    LIndex=np.array(landmark[19])# 左人差し指
+    RIndex=np.array(landmark[20])# 左人差し指
+    LThumb=np.array(landmark[21])# 左親指
+    RThumb=np.array(landmark[22])# 右親指
     #下半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    LKnee=np.array(landmark[25][1])# 左ひざ
-    RKnee=np.array(landmark[26][1])# 右ひざ
-    LAnkle=np.array(landmark[27][1])# 左足首
-    RAnkle=np.array(landmark[28][1])# 右足首
-    LHeel=np.array(landmark[29][1])# 左かかと
-    RHeel=np.array(landmark[30][1])# 右かかと
-    LToes=np.array(landmark[31][1])# 左つま先
-    RToes=np.array(landmark[32][1])# 右つま先
+    LKnee=np.array(landmark[25])# 左ひざ
+    RKnee=np.array(landmark[26])# 右ひざ
+    LAnkle=np.array(landmark[27])# 左足首
+    RAnkle=np.array(landmark[28])# 右足首
+    LHeel=np.array(landmark[29])# 左かかと
+    RHeel=np.array(landmark[30])# 右かかと
+    LToes=np.array(landmark[31])# 左つま先
+    RToes=np.array(landmark[32])# 右つま先
     HeartAbsol=((LShoulder+RShoulder)/2)#胸（絶対位置）
     #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
     #前方ベクトルを取得
+    
     get_forwardvec(LHip-HeartAbsol,RHip-HeartAbsol)
 
     #教師のベクトル取得
@@ -315,37 +385,37 @@ for index, (landmarks1,landmarks2) in enumerate(zip(frames1,frames2)):
     #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
     #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
 
-    landmark=eval(landmarks2[1])
+    landmark=(landmarks2[1])
 
     
     #教師の位置の設定。（L,Rは絶対位置、Left,Rightは相対位置）
     #部位ごとに取得＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
-    NoseAbsol2=np.array(landmark[0][1])# 鼻
-    LHip2=np.array(landmark[23][1])# 腰(左側)
-    RHip2=np.array(landmark[24][1])# 腰(右側)
+    NoseAbsol2=np.array(landmark[0])# 鼻
+    LHip2=np.array(landmark[23])# 腰(左側)
+    RHip2=np.array(landmark[24])# 腰(右側)
     Base2=((LHip2+RHip2)/2)#腰(左右腰の中間)
     #上半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    LShoulder2=np.array(landmark[11][1])# 左肩
-    RShoulder2=np.array(landmark[12][1])# 右肩
-    LElbow2=np.array(landmark[13][1])# 左肘
-    RElbow2=np.array(landmark[14][1])# 右肘
-    LWrist2=np.array(landmark[15][1])# 左手首
-    RWrist2=np.array(landmark[16][1])# 右手首
-    LPinky2=np.array(landmark[17][1])# 左子指
-    RPinky2=np.array(landmark[18][1])# 右子指
-    LIndex2=np.array(landmark[19][1])# 左人差し指
-    RIndex2=np.array(landmark[20][1])# 左人差し指
-    LThumb2=np.array(landmark[21][1])# 左親指
-    RThumb2=np.array(landmark[22][1])# 右親指
+    LShoulder2=np.array(landmark[11])# 左肩
+    RShoulder2=np.array(landmark[12])# 右肩
+    LElbow2=np.array(landmark[13])# 左肘
+    RElbow2=np.array(landmark[14])# 右肘
+    LWrist2=np.array(landmark[15])# 左手首
+    RWrist2=np.array(landmark[16])# 右手首
+    LPinky2=np.array(landmark[17])# 左子指
+    RPinky2=np.array(landmark[18])# 右子指
+    LIndex2=np.array(landmark[19])# 左人差し指
+    RIndex2=np.array(landmark[20])# 左人差し指
+    LThumb2=np.array(landmark[21])# 左親指
+    RThumb2=np.array(landmark[22])# 右親指
     #下半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    LKnee2=np.array(landmark[25][1])# 左ひざ
-    RKnee2=np.array(landmark[26][1])# 右ひざ
-    LAnkle2=np.array(landmark[27][1])# 左足首
-    RAnkle2=np.array(landmark[28][1])# 右足首
-    LHeel2=np.array(landmark[29][1])# 左かかと
-    RHeel2=np.array(landmark[30][1])# 右かかと
-    LToes2=np.array(landmark[31][1])# 左つま先
-    RToes2=np.array(landmark[32][1])# 右つま先
+    LKnee2=np.array(landmark[25])# 左ひざ
+    RKnee2=np.array(landmark[26])# 右ひざ
+    LAnkle2=np.array(landmark[27])# 左足首
+    RAnkle2=np.array(landmark[28])# 右足首
+    LHeel2=np.array(landmark[29])# 左かかと
+    RHeel2=np.array(landmark[30])# 右かかと
+    LToes2=np.array(landmark[31])# 左つま先
+    RToes2=np.array(landmark[32])# 右つま先
     HeartAbsol2=((LShoulder2+RShoulder2)/2)#胸（絶対位置）
     #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
     #前方ベクトルを取得
@@ -487,7 +557,7 @@ for index, (landmarks1,landmarks2) in enumerate(zip(frames1,frames2)):
     #ーーーーーーーーーーーーーーーーーーーーーーーーー
     #骨格形成
     Base_out=((LHip+RHip)/2)#腰(左右腰の中間)（これが中心なのでマスターデータ側の座標に合わせる）
-    LHip_out=vectorSet(Base_out,LeftHip2,LeftHip2)# 腰(左側)
+    LHip_out=vectorSet(Base_out,LeftHip2,LeftHip)# 腰(左側)
     RHip_out=vectorSet(Base_out,RightHip2,RightHip)# 腰(右側)
     Heart_out=vectorSet(Base_out,Heart2,Heart)#胸（絶対位置）
     Nose_out=vectorSet(Heart_out,Nose2,Nose)# 鼻
@@ -651,7 +721,7 @@ def poseDraw(plt,ax,landmarks,visibility_th=0.5,badlist=[],pose_color="red",isMa
 
     for index, landmark in enumerate(landmarks):
         landmark_point.append(
-            [index, (landmark[0], landmark[1], landmark[2])])
+            [index, [landmark[0], landmark[1], landmark[2]]])
 
     nose_index = [11, 12]#胸、鼻
     spine_index = [0, 11]#腰、胸
@@ -854,6 +924,6 @@ for motion_1,motion_2,rot1,rot2 in zip(Motions_1,Motions_2,Motions_rot1,Motions_
 
 #score=ScoreLearning(np.array(length_list),score_est)
 
-score_est=np.array([8]*len(train_data)) #ユーザーの推定したスコア
-score=ScoreLearning(np.array(train_data),score_est)
+#score_est=np.array([8]*len(train_data)) #ユーザーの推定したスコア
+#score=ScoreLearning(np.array(train_data),score_est)
 

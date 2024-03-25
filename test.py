@@ -1,14 +1,8 @@
 import numpy as np
 
-# リストのリストを作成
-data = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+data1 = np.array([[1, 2], [4, 5, 6], [7, 8, 9]])
+data2 = np.array([[1, 2], [4, 5, 6], [7, 8, 9]])
 
-# NumPy配列に変換
-array = np.array(data)
+data3 = data1 + data2
 
-# 出力
-print(type(array[0]))
-
-# [[1 2 3]
-#  [4 5 6]
-#  [7 8 9]]
+print(data3)

@@ -265,14 +265,16 @@ def main():
                         results.pose_world_landmarks,
                     )
 
-            landmark_point = []#有効性、xyz座標
-
+            landmark_point = []#xyz座標
+            visibilities=[]#有効性
             for index, landmark in enumerate(results.pose_world_landmarks.landmark):
+                visibilities.append(landmark.visibility)
                 landmark_point.append(
-                    [landmark.visibility, (landmark.x, landmark.y, landmark.z)])
+                    [landmark.x, landmark.y, landmark.z])
+            
 
             #csv書き込み＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
-            
+            #print(landmark_point)
             #データ出力
             with open("./posedata.csv","a") as f:
                 writer=csv.writer(f)
@@ -291,7 +293,7 @@ def main():
             #print("＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝")
             #print("フレーム数："+str(FPS))
             #print(str(nowtime/1000)+"秒")
-
+            #print(sql_table_name)
             #sql書き込み。最初のフレームならDBクリア
             sql_set(now,landmark_point,sql_table_name,isFirst,nowtime)
 
@@ -427,7 +429,7 @@ def draw_hands_landmarks(
         landmark_y = min(int(landmark.y * image_height), image_height - 1)
         landmark_z = landmark.z
 
-        landmark_point.append((landmark_x, landmark_y))
+        landmark_point.append([landmark_x, landmark_y])
 
         if index == 0:  # 手首1
             cv2.circle(image, (landmark_x, landmark_y), 5, (0, 255, 0), 2)
@@ -541,7 +543,7 @@ def draw_face_landmarks(image, landmarks):
         landmark_y = min(int(landmark.y * image_height), image_height - 1)
         landmark_z = landmark.z
 
-        landmark_point.append((landmark_x, landmark_y))
+        landmark_point.append([landmark_x, landmark_y])
 
         cv2.circle(image, (landmark_x, landmark_y), 1, (0, 255, 0), 1)
 
@@ -674,7 +676,7 @@ def draw_pose_landmarks(
         landmark_x = min(int(landmark.x * image_width), image_width - 1)
         landmark_y = min(int(landmark.y * image_height), image_height - 1)
         landmark_z = landmark.z
-        landmark_point.append([landmark.visibility, (landmark_x, landmark_y)])
+        landmark_point.append([landmark.visibility, [landmark_x, landmark_y]])
 
         if landmark.visibility < visibility_th:
             continue
@@ -902,11 +904,12 @@ def plot_world_landmarks(
     landmarks,
     visibility_th=0.5,
 ):
-    landmark_point = []#有効性、xyz座標
-
+    landmark_point = []#xyz座標
+    visibilities=[]#有効性
     for index, landmark in enumerate(landmarks.landmark):
         landmark_point.append(
-            [landmark.visibility, (landmark.x, landmark.y, landmark.z)])
+            [landmark.x, landmark.y, landmark.z])
+        visibilities.append(landmark.visibility)
 
     face_index_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     right_arm_index_list = [11, 13, 15, 17, 19, 21]#肩、肘、手首、外側端、先端、内側端

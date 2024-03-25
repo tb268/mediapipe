@@ -4,7 +4,8 @@
 import sqlite3
 import json
 #
-def sql_set(times,landmark_point,pose,isFirst,FPS):
+def sql_set(times,landmark_point,pose,isFirst,duration):
+    #print(pose)
     #DBの名前。同一ディレクトリ内に生成
     dbname = 'main.db'
 
@@ -12,8 +13,17 @@ def sql_set(times,landmark_point,pose,isFirst,FPS):
 
         # SQLiteを操作するためのカーソルを作成
         cur = conn.cursor()
+
+        #1フレーム目であった場合
         if isFirst:
-            cur.execute(f'DELETE FROM {pose}')
+            # テーブルが存在するかどうかを確認
+            cur.execute(f"SELECT COUNT(*) FROM sqlite_master WHERE TYPE='table' AND name='{pose}';")
+            table_exists = cur.fetchone()
+            
+            # テーブルが存在する場合は、テーブルを削除
+            if table_exists:
+                print("既存のテーブルを削除します")
+                cur.execute(f"DELETE FROM {pose}")
 
         # テーブルの作成
         #cur.execute(
@@ -28,16 +38,17 @@ def sql_set(times,landmark_point,pose,isFirst,FPS):
         # 完全なテーブル作成クエリを構築
         #DB内にposeテーブルがない時に作成
         
-        cur.execute(f"CREATE TABLE IF NOT EXISTS {pose} (id INTEGER PRIMARY KEY,data TEXT,time REAL)")
+        cur.execute(f"CREATE TABLE IF NOT EXISTS {pose} (id INTEGER PRIMARY KEY,data TEXT,times REAL)")
         # データ登録
         # 挿入したい50個のデータ（例）
+        #print(landmark_point)
         data = landmark_point  # このタプルに50個の要素が含まれていると仮定
 
         # 配列全体をJSON文字列に変換
         json_data = json.dumps(data)
 
-        # データベースに挿入（ここがまだ）
-        cur.execute(f"INSERT INTO {pose} (data) VALUES (?);", (json_data,))
+        # データベースに挿入（ポーズデータ、経過時間）
+        cur.execute(f"INSERT INTO {pose} (data,times) VALUES (?,?);", (json_data,duration,))
 
         # 複数データ登録
         #cur.executemany('INSERT INTO items values(?, ?, ?)', inserts)
@@ -60,7 +71,7 @@ dbname = 'main.db'
 with sqlite3.connect(dbname) as conn:
     # SQLiteを操作するためのカーソルを作成
     cur = conn.cursor()
-    cur.execute("DELETE FROM pose")
+    cur.execute("DELETE FROM pose2")
     # コミットしないと登録が反映されない
     conn.commit()
     # データ検索
@@ -70,4 +81,5 @@ with sqlite3.connect(dbname) as conn:
     #for row in cur:
     #   print(row)
     #conn.close()
+
 """
