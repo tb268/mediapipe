@@ -182,13 +182,13 @@ def fps_set(frames,fps):
         while True:
             if frames[l][2]<=t<frames[l+1][2]:
                 time=frames[l+1][2]-frames[l][2]
+                m1=abs(frames[l+1][2]%time)
+                m2=time-m1
                 
                 pose=[]
-                for i in range(len(frames)):
-                    pass
                 #print(frames[l][1])
-                pose=(np.array(frames[l][1])*(abs(frames[l+1][2]-time)/time))+(np.array(frames[l][1])*(abs(frames[l][2]-time)/time))
-                
+                pose=(np.array(frames[l][1])*(m1)+(np.array(frames[l+1][1])*(m2)))/time
+                print(frames[l+1][2]-time)
                 
                 sublist.append(n)       #インデックス
                 sublist.append(pose)   #ポーズリスト
