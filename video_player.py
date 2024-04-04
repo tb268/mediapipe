@@ -12,31 +12,27 @@ from PIL import Image, ImageOps, ImageTk
 
 import threading
 
-class Set_gui:
-    def __init__(self, main_window):
 
+class create_group:
+    def __init__(self,parents,frame):
         # Variable setting
         self.file_filter = [("Movie file", ".mp4")]
         self.set_movie = True
         self.thread_set = False
         self.start_movie = False
         self.video_frame = None
-
-        # Main window
-        self.main_window = main_window
-        self.main_window.geometry("1400x800")
-        self.main_window.title("Movie Editor v0.10")
-
-        self.playtime=tk.IntVar(main_window)
-
-        #スライダーの長さ
-        self.sliderlength=100
-
-        # Sub window
-        self.canvas_frame = tk.Frame(self.main_window, height=450, width=400)
-        self.scale_frame = tk.Frame(self.main_window, height=1000, width=1200)
-        self.path_frame = tk.Frame(self.main_window, height=100, width=400)
-        self.opr_frame = tk.Frame(self.main_window, height=100, width=400)
+        super().__init__()  #親クラスのinitを使用
+        self.parents=parents    #親クラス
+        self.frame=frame    #親フレーム
+        # Sub window=======================================
+        #動画キャンバス
+        self.canvas_frame = tk.Frame(self.frame, height=450, width=400)
+        #シークバー
+        self.scale_frame = tk.Frame(self.frame, height=1000, width=1200)
+        #動画ファイルパス
+        self.path_frame = tk.Frame(self.frame, height=100, width=400)
+        #ボタンリスト
+        self.opr_frame = tk.Frame(self.frame, height=100, width=400)
 
         # Widgetsmith
         self.canvas_frame.place(relx=0.05, rely=0.05)
@@ -57,14 +53,14 @@ class Set_gui:
         #self.canvas = tk.Canvas(self.canvas_frame, width=700, height=500, bg="#A9A9A9")
         #self.canvas.grid(row=1, column=0)
         # Scale（デフォルトで作成）
-        
-        self.scaleH = tk.Scale(self.scale_frame,
-                               command = self.slider_scroll,
-                               variable=self.playtime,
-                               orient=tk.HORIZONTAL,
+
+        self.scaleH = tk.Scale(
+                            self.scale_frame,
+                                command = self.slider_scroll,
+                                orient=tk.HORIZONTAL,
                                 length = 700,           # 全体の長さ
                                 width = 20,             # 全体の太さ
-                               from_ = 0,            # 最小値（開始の値）
+                                from_ = 0,            # 最小値（開始の値）
                                 to = 100,               # 最大値
                                 )
         
@@ -75,10 +71,10 @@ class Set_gui:
         self.button.grid(row=0, column=0, sticky=tk.W, padx=10, pady=10)
 
         self.path_stvar = tk.StringVar()
-        self.path_entry = tk.Entry(
+        path_entry = tk.Entry(
             self.path_frame, textvariable=self.path_stvar, width=70
         )
-        self.path_entry.grid(row=1, column=0, sticky=tk.EW, padx=10)
+        path_entry.grid(row=1, column=0, sticky=tk.EW, padx=10)
 
         # 3 opr_frame
         self.button = self.opr_btn(self.opr_frame, "Start", self.on_click_start)
@@ -92,24 +88,18 @@ class Set_gui:
 
         self.button = self.opr_btn(self.opr_frame, "Exit", self.on_click_close)
         self.button.grid(row=3, column=2, sticky=tk.SE, padx=10, pady=10)
+        self.canvas_frame.grid(row=1, column=0)
+        
 
-        def key_Down(event):
-            #if event.char == "<space>":
+    def on_key_press(self,event):
+        # キー入力に応じてスライダーの値を変更する
+        if event.char == "a":
+            self.scaleH.set(self.scaleH.get() - 1)
+        elif event.char == "d":
+            self.scaleH.set(self.scaleH.get() + 1)
 
-            print("あああああ")
-
-        but = tk.Button()
-        but.bind( '<Key-a>', key_Down )
-
-        def on_key_press(event):
-            # キー入力に応じてスライダーの値を変更する
-            if event.char == "a":
-                self.scaleH.set(self.scaleH.get() - 1)
-            elif event.char == "d":
-                self.scaleH.set(self.scaleH.get() + 1)
-
-            # キー入力イベントにイベントハンドラーをバインド
-            self.scaleH.bind("<KeyPress>", on_key_press)
+        # キー入力イベントにイベントハンドラーをバインド
+        self.scaleH.bind("<KeyPress>", on_key_press)
 
 
     def slider_scroll(self, event=None):
@@ -158,7 +148,9 @@ class Set_gui:
             self.thread_main.join()
 
         self.video_cap.release()
-        self.main_window.destroy()
+        self.main_window.destroy() 
+
+
 
     def main_thread_func(self):
 
@@ -260,6 +252,30 @@ class Set_gui:
         return filedialog.askopenfilename(
             title="Please select image file,", filetypes=self.file_filter
         )
+
+
+class Set_gui():
+    def __init__(self, main_window):
+
+
+        # メインウインドウ
+        self.main_window = main_window
+        self.main_window.geometry("1400x800")
+        self.main_window.title("Movie Editor v0.10")
+        #動画ウインドウ1（左）
+        self.frame1=tk.Frame(self.main_window)
+        #動画ウインドウ2（右）
+        self.frame2=tk.Frame(self.main_window)
+
+        #スライダーの長さ
+        self.sliderlength=100
+        self.path_stvar = tk.StringVar()
+        #表示＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+        create_group(self,self.frame1)
+        create_group(self,self.frame2)
+        self.frame1.pack(side=tk.LEFT, padx=0)
+        self.frame2.pack(side=tk.LEFT, padx=1)
+        
 
 
 def main():
