@@ -14,6 +14,9 @@ import matplotlib.pyplot as plt
 import keyboard
 #from tensortest import ScoreLearning
 import sys
+import matplotlib.pyplot as plt
+
+
 
 #np配列をスペースありのstring文字列に変換
 def np2str(array):
@@ -174,9 +177,11 @@ def fps_set(frames,fps):
     
 
     total_time=frames[-1][2]
+    #nowfps=0
     l=0
     n=0
     t=0
+    #minute=1
     while t<total_time:
         sublist=[]
         while t<total_time:
@@ -193,7 +198,7 @@ def fps_set(frames,fps):
                 sublist.append(n)       #インデックス
                 sublist.append(pose)   #ポーズリスト
                 sublist.append(t)               #経過時間
-
+                
 
                 break
                 
@@ -203,11 +208,257 @@ def fps_set(frames,fps):
         n+=1
         #秒数指定、誤差がある場合調整する必要あり
         t+=1000/fps
+        #nowfps+=1
+        #if nowfps==fps:
+        #    t=minute
+
         outlist.append(sublist)
         
 
     return outlist
 
+
+#ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+#ポーズ判定用（座標）
+def poseCheck_xyz(landmarks1,landmarks2):
+
+    length_list=[0]*len(landmarks1)
+    
+    for index,(landmark1,landmark2) in enumerate(zip(landmarks1,landmarks2)):
+        dif=0
+        #教師生徒間の同部位の距離を計算
+        dif=np.linalg.norm(landmark1-landmark2)
+
+        #長さをリストにいれる
+        length_list[index]=dif
+
+    return length_list
+
+#ポーズ判定用（角度）
+def poseCheck_rot(rot1,rot2):
+
+    length_list=[0]*len(rot1)
+
+    for index,(r1,r2) in enumerate(zip(rot1,rot2)):
+        dif=0
+        if type(r1)==list:
+            for i in range(len(r1)):
+                dif=max(dif,r1[i]-r2[i])
+
+        else:   
+            #教師生徒間の同部位の距離を計算
+            dif=r1-r2
+
+        #角度をリストにいれる
+        length_list[index]=dif
+
+
+    return length_list
+    
+def pose_index_set(pose_index_list,landmark_point):
+    pose_x,pose_y,pose_z=[],[],[]
+    for index in pose_index_list:
+        point = landmark_point[index][1]
+        pose_x.append(point[0])
+        pose_y.append(point[2])
+        pose_z.append(point[1] * (-1))
+
+    return pose_x,pose_y,pose_z
+
+def PlotAndColor(bonelist,ax,badlist,good_color,bad_color,isMaster,isbad):
+    #*****************************************************************************
+    #
+    # bonelist:boneのxyz座標のリスト。[[x1,y1,z1],[x2,y2,z2],[x2,y2,z2],.....]のようになっており、
+    # 座標1と2、2と3、3と4をそれぞれ繋いでいく
+    # ax :pltの表示用
+    # badlist:  座標がマスターの規定値よりずれているリスト
+    # good_color:   合っている時の表示色
+    # bad_color:    ずれている時の表示色
+    # isMaster: マスターデータかどうか、マスターデータならすべて合っている判定
+    # isbad :   親の骨格がずれているかどうか、ずれているならすべて間違っている判定
+    #
+    #*****************************************************************************
+    
+    parent_isbad=False #親ボーンが間違っているか
+    for [i,[bone_x, bone_y, bone_z]] in bonelist:
+
+        #マスターデータの場合、すべてデフォルト色で表示
+        if isMaster:
+            ax.plot(bone_x, bone_y, bone_z,color=good_color)
+            continue
+
+        if isbad:
+            ax.plot(bone_x, bone_y, bone_z,color=bad_color)
+            continue
+
+        #間違っているリストにある。もしくは親ボーンが間違っている場合、赤色で表示
+        if badlist[i] or parent_isbad:
+            ax.plot(bone_x, bone_y, bone_z,color=bad_color)
+            parent_isbad=True
+        else:
+            ax.plot(bone_x, bone_y, bone_z,color=good_color)
+            
+        
+    return parent_isbad
+
+#ポーズ描画用
+def poseDraw(plt,ax,landmarks,visibility_th=0.5,badlist=[],pose_color="red",isMaster=False):
+    landmark_point = []#有効性、xyz座標
+
+    for index, landmark in enumerate(landmarks):
+        landmark_point.append(
+            [index, [landmark[0], landmark[1], landmark[2]]])
+
+    nose_index = [11, 12]#胸、鼻
+    spine_index = [0, 11]#腰、胸
+
+    left_Shoulder_index = [11, 13]  #胸、肩
+    left_upArm_index = [13, 14]  #肩、肘
+    left_arm_index = [14, 15]  #肘、手首
+    left_thumb_index = [15, 18]  #手首、内側端(親指)
+    left_pinky_index = [15, 17]  #手首、先端(中指)
+    left_index_index = [15, 16]  #手首、外側端(小指)
+
+    right_Shoulder_index = [11, 19] #胸、肩
+    right_upArm_index = [19, 20] #肩、肘
+    right_arm_index = [20, 21] #肘、手首
+    right_thumb_index = [21, 24] #手首、内側端(親指)
+    right_pinky_index = [21, 23] #手首、先端(中指)
+    right_index_index = [21, 22] #手首、外側端(小指)
+
+    left_hip_index = [0, 1]    #腰、尻
+    left_upReg_index = [1, 2]    #尻、膝
+    left_reg_index = [2, 3]    #膝、足首
+    left_heel_index = [3, 4]    #足首、足先
+    left_toes_index = [3, 5]    #足首、かかと
+
+    right_hip_index = [0, 6] #腰、尻
+    right_upReg_index = [6, 7] #尻、膝
+    right_reg_index = [7, 8] #膝、足首
+    right_heel_index = [8, 9] #足首、足先
+    right_toes_index = [8, 10] #足首、かかと
+
+    #各座標をリスト化(0=x,1=y,2=z)
+
+    #背骨、鼻
+    nose_bone=pose_index_set(nose_index,landmark_point)
+    spine_bone =pose_index_set(spine_index,landmark_point)
+
+    
+    #肩
+    left_Shoulder_bone =pose_index_set(left_Shoulder_index,landmark_point)
+    right_Shoulder_bone =pose_index_set(right_Shoulder_index,landmark_point)
+    #上腕
+    left_upArm_bone =pose_index_set(left_upArm_index,landmark_point)
+    right_upArm_bone =pose_index_set(right_upArm_index,landmark_point)
+    #前腕
+    left_arm_bone =pose_index_set(left_arm_index,landmark_point)
+    right_arm_bone =pose_index_set(right_arm_index,landmark_point)
+    #親指
+    left_thumb_bone =pose_index_set(left_thumb_index,landmark_point)
+    right_thumb_bone =pose_index_set(right_thumb_index,landmark_point)
+    #小指
+    left_pinky_bone =pose_index_set(left_pinky_index,landmark_point)
+    right_pinky_bone =pose_index_set(right_pinky_index,landmark_point)
+    #中指
+    left_index_bone =pose_index_set(left_index_index,landmark_point)
+    right_index_bone =pose_index_set(right_index_index,landmark_point)
+
+
+    
+    #尻
+    left_hip_bone =pose_index_set(left_hip_index,landmark_point)
+    right_hip_bone =pose_index_set(right_hip_index,landmark_point)
+    #上足
+    left_upReg_bone =pose_index_set(left_upReg_index,landmark_point)
+    right_upReg_bone =pose_index_set(right_upReg_index,landmark_point)
+    #下足
+    left_reg_bone =pose_index_set(left_reg_index,landmark_point)
+    right_reg_bone =pose_index_set(right_reg_index,landmark_point)
+    #つま先
+    left_toes_bone =pose_index_set(left_toes_index,landmark_point)
+    right_toes_bone =pose_index_set(right_toes_index,landmark_point)
+    #かかと
+    left_heel_bone =pose_index_set(left_heel_index,landmark_point)
+    right_heel_bone =pose_index_set(right_heel_index,landmark_point)
+
+    #＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+
+    #骨リストを作成。
+    #
+    #[骨のインデックス,骨の座標リスト]
+    #
+    spine_bonelist=[[11, spine_bone]]
+    nose_bonelist=[[12, nose_bone]]
+    #左上半身_骨リスト
+    up_left_bonelist=[[13, left_Shoulder_bone],[14, left_upArm_bone],[15, left_arm_bone]]
+    #左手指_骨リスト
+    left_finger_bonelist=[[16, left_pinky_bone],[17, left_index_bone],[18, left_thumb_bone]]
+
+    #右上半身_骨リスト
+    up_right_bonelist=[[19, right_Shoulder_bone],[20, right_upArm_bone],[21, right_arm_bone]]
+    #右手指_骨リスト
+    right_finger_bonelist=[[22, right_pinky_bone],[23, right_index_bone],[24, right_thumb_bone]]
+
+    #左下半身_骨リスト
+    down_left_bonelist=[[1, left_hip_bone],[2, left_upReg_bone],[3, left_reg_bone]]
+    #左つま先かかと_骨リスト
+    left_toesheel_bonelist=[[4, left_toes_bone],[5, left_heel_bone]]
+
+    #右下半身_骨リスト
+    down_right_bonelist=[[6, right_hip_bone],[7, right_upReg_bone],[8, right_reg_bone]]
+    #右つま先かかと_骨リスト
+    right_toesheel_bonelist=[[9, right_toes_bone],[10, right_heel_bone]]
+
+
+    ax.set_xlim3d(-1, 1)
+    ax.set_ylim3d(-1, 1)
+    ax.set_zlim3d(-1, 1)
+
+    #pltで表示
+    #scatterが点、plotが線で繋ぐ
+    bad_color="red"
+
+    #背骨
+    isSpine=PlotAndColor(spine_bonelist,ax,badlist,pose_color,bad_color,isMaster,False)
+    #鼻
+    PlotAndColor(nose_bonelist,ax,badlist,pose_color,bad_color,isMaster,isSpine)
+
+    #左上半身
+    isUpLeft=PlotAndColor(up_left_bonelist,ax,badlist,pose_color,bad_color,isMaster,isSpine)
+    #右上半身
+    isUpRight=PlotAndColor(up_right_bonelist,ax,badlist,pose_color,bad_color,isMaster,isSpine)
+
+    #左下半身
+    isDownLeft=PlotAndColor(down_left_bonelist,ax,badlist,pose_color,bad_color,isMaster,False)
+    #右下半身
+    isDownRight=PlotAndColor(down_right_bonelist,ax,badlist,pose_color,bad_color,isMaster,False)
+
+    #左指
+    PlotAndColor(left_finger_bonelist,ax,badlist,pose_color,bad_color,isMaster,isUpLeft)
+    #右指
+    PlotAndColor(right_finger_bonelist,ax,badlist,pose_color,bad_color,isMaster,isUpRight)   
+
+    #つま先かかと
+    PlotAndColor(right_toesheel_bonelist,ax,badlist,pose_color,bad_color,isMaster,isDownLeft)
+    #つま先かかと
+    PlotAndColor(left_toesheel_bonelist,ax,badlist,pose_color,bad_color,isMaster,isDownRight)
+
+
+    plt.xlabel('X-label')
+    plt.ylabel('Z-label')
+
+    return
+
+#良し悪しを判定する
+def isGood(lists,bad):
+    l=[bad]*len(lists)
+    out=[False]*len(lists)
+    for i in range(len(lists)):
+        if lists[i]>l[i]:
+            out[i]=True
+
+    return out
 
 
 #print("ーーーーーーーーーーーーーーーーーーーーーーーーーーーーー")
@@ -632,251 +883,8 @@ for index, (landmarks1,landmarks2) in enumerate(zip(frames1,frames2)):
 
 print("モーション計算完了")
 
-#ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-#ポーズ判定用（座標）
-def poseCheck_xyz(landmarks1,landmarks2):
-
-    length_list=[0]*len(landmarks1)
-    
-    for index,(landmark1,landmark2) in enumerate(zip(landmarks1,landmarks2)):
-        dif=0
-        #教師生徒間の同部位の距離を計算
-        dif=np.linalg.norm(landmark1-landmark2)
-
-        #長さをリストにいれる
-        length_list[index]=dif
-
-    return length_list
-
-#ポーズ判定用（角度）
-def poseCheck_rot(rot1,rot2):
-
-    length_list=[0]*len(rot1)
-
-    for index,(r1,r2) in enumerate(zip(rot1,rot2)):
-        dif=0
-        if type(r1)==list:
-            for i in range(len(r1)):
-                dif=max(dif,r1[i]-r2[i])
-
-        else:   
-            #教師生徒間の同部位の距離を計算
-            dif=r1-r2
-
-        #角度をリストにいれる
-        length_list[index]=dif
-
-
-    return length_list
-    
-def pose_index_set(pose_index_list,landmark_point):
-    pose_x,pose_y,pose_z=[],[],[]
-    for index in pose_index_list:
-        point = landmark_point[index][1]
-        pose_x.append(point[0])
-        pose_y.append(point[2])
-        pose_z.append(point[1] * (-1))
-
-    return pose_x,pose_y,pose_z
-
-def PlotAndColor(bonelist,ax,badlist,good_color,bad_color,isMaster,isbad):
-    #*****************************************************************************
-    #
-    # bonelist:boneのxyz座標のリスト。[[x1,y1,z1],[x2,y2,z2],[x2,y2,z2],.....]のようになっており、
-    # 座標1と2、2と3、3と4をそれぞれ繋いでいく
-    # ax :pltの表示用
-    # badlist:  座標がマスターの規定値よりずれているリスト
-    # good_color:   合っている時の表示色
-    # bad_color:    ずれている時の表示色
-    # isMaster: マスターデータかどうか、マスターデータならすべて合っている判定
-    # isbad :   親の骨格がずれているかどうか、ずれているならすべて間違っている判定
-    #
-    #*****************************************************************************
-    
-    parent_isbad=False #親ボーンが間違っているか
-    for [i,[bone_x, bone_y, bone_z]] in bonelist:
-
-        #マスターデータの場合、すべてデフォルト色で表示
-        if isMaster:
-            ax.plot(bone_x, bone_y, bone_z,color=good_color)
-            continue
-
-        if isbad:
-            ax.plot(bone_x, bone_y, bone_z,color=bad_color)
-            continue
-
-        #間違っているリストにある。もしくは親ボーンが間違っている場合、赤色で表示
-        if badlist[i] or parent_isbad:
-            ax.plot(bone_x, bone_y, bone_z,color=bad_color)
-            parent_isbad=True
-        else:
-            ax.plot(bone_x, bone_y, bone_z,color=good_color)
-            
-        
-    return parent_isbad
-
-#ポーズ描画用
-def poseDraw(plt,ax,landmarks,visibility_th=0.5,badlist=[],pose_color="red",isMaster=False):
-    landmark_point = []#有効性、xyz座標
-
-    for index, landmark in enumerate(landmarks):
-        landmark_point.append(
-            [index, [landmark[0], landmark[1], landmark[2]]])
-
-    nose_index = [11, 12]#胸、鼻
-    spine_index = [0, 11]#腰、胸
-
-    left_Shoulder_index = [11, 13]  #胸、肩
-    left_upArm_index = [13, 14]  #肩、肘
-    left_arm_index = [14, 15]  #肘、手首
-    left_thumb_index = [15, 18]  #手首、内側端(親指)
-    left_pinky_index = [15, 17]  #手首、先端(中指)
-    left_index_index = [15, 16]  #手首、外側端(小指)
-
-    right_Shoulder_index = [11, 19] #胸、肩
-    right_upArm_index = [19, 20] #肩、肘
-    right_arm_index = [20, 21] #肘、手首
-    right_thumb_index = [21, 24] #手首、内側端(親指)
-    right_pinky_index = [21, 23] #手首、先端(中指)
-    right_index_index = [21, 22] #手首、外側端(小指)
-
-    left_hip_index = [0, 1]    #腰、尻
-    left_upReg_index = [1, 2]    #尻、膝
-    left_reg_index = [2, 3]    #膝、足首
-    left_heel_index = [3, 4]    #足首、足先
-    left_toes_index = [3, 5]    #足首、かかと
-
-    right_hip_index = [0, 6] #腰、尻
-    right_upReg_index = [6, 7] #尻、膝
-    right_reg_index = [7, 8] #膝、足首
-    right_heel_index = [8, 9] #足首、足先
-    right_toes_index = [8, 10] #足首、かかと
-
-    #各座標をリスト化(0=x,1=y,2=z)
-
-    #背骨、鼻
-    nose_bone=pose_index_set(nose_index,landmark_point)
-    spine_bone =pose_index_set(spine_index,landmark_point)
-
-    
-    #肩
-    left_Shoulder_bone =pose_index_set(left_Shoulder_index,landmark_point)
-    right_Shoulder_bone =pose_index_set(right_Shoulder_index,landmark_point)
-    #上腕
-    left_upArm_bone =pose_index_set(left_upArm_index,landmark_point)
-    right_upArm_bone =pose_index_set(right_upArm_index,landmark_point)
-    #前腕
-    left_arm_bone =pose_index_set(left_arm_index,landmark_point)
-    right_arm_bone =pose_index_set(right_arm_index,landmark_point)
-    #親指
-    left_thumb_bone =pose_index_set(left_thumb_index,landmark_point)
-    right_thumb_bone =pose_index_set(right_thumb_index,landmark_point)
-    #小指
-    left_pinky_bone =pose_index_set(left_pinky_index,landmark_point)
-    right_pinky_bone =pose_index_set(right_pinky_index,landmark_point)
-    #中指
-    left_index_bone =pose_index_set(left_index_index,landmark_point)
-    right_index_bone =pose_index_set(right_index_index,landmark_point)
-
-
-    
-    #尻
-    left_hip_bone =pose_index_set(left_hip_index,landmark_point)
-    right_hip_bone =pose_index_set(right_hip_index,landmark_point)
-    #上足
-    left_upReg_bone =pose_index_set(left_upReg_index,landmark_point)
-    right_upReg_bone =pose_index_set(right_upReg_index,landmark_point)
-    #下足
-    left_reg_bone =pose_index_set(left_reg_index,landmark_point)
-    right_reg_bone =pose_index_set(right_reg_index,landmark_point)
-    #つま先
-    left_toes_bone =pose_index_set(left_toes_index,landmark_point)
-    right_toes_bone =pose_index_set(right_toes_index,landmark_point)
-    #かかと
-    left_heel_bone =pose_index_set(left_heel_index,landmark_point)
-    right_heel_bone =pose_index_set(right_heel_index,landmark_point)
-
-    #＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
-
-    #骨リストを作成。
-    #
-    #[骨のインデックス,骨の座標リスト]
-    #
-    spine_bonelist=[[11, spine_bone]]
-    nose_bonelist=[[12, nose_bone]]
-    #左上半身_骨リスト
-    up_left_bonelist=[[13, left_Shoulder_bone],[14, left_upArm_bone],[15, left_arm_bone]]
-    #左手指_骨リスト
-    left_finger_bonelist=[[16, left_pinky_bone],[17, left_index_bone],[18, left_thumb_bone]]
-
-    #右上半身_骨リスト
-    up_right_bonelist=[[19, right_Shoulder_bone],[20, right_upArm_bone],[21, right_arm_bone]]
-    #右手指_骨リスト
-    right_finger_bonelist=[[22, right_pinky_bone],[23, right_index_bone],[24, right_thumb_bone]]
-
-    #左下半身_骨リスト
-    down_left_bonelist=[[1, left_hip_bone],[2, left_upReg_bone],[3, left_reg_bone]]
-    #左つま先かかと_骨リスト
-    left_toesheel_bonelist=[[4, left_toes_bone],[5, left_heel_bone]]
-
-    #右下半身_骨リスト
-    down_right_bonelist=[[6, right_hip_bone],[7, right_upReg_bone],[8, right_reg_bone]]
-    #右つま先かかと_骨リスト
-    right_toesheel_bonelist=[[9, right_toes_bone],[10, right_heel_bone]]
-
-
-    ax.set_xlim3d(-1, 1)
-    ax.set_ylim3d(-1, 1)
-    ax.set_zlim3d(-1, 1)
-
-    #pltで表示
-    #scatterが点、plotが線で繋ぐ
-    bad_color="red"
-
-    #背骨
-    isSpine=PlotAndColor(spine_bonelist,ax,badlist,pose_color,bad_color,isMaster,False)
-    #鼻
-    PlotAndColor(nose_bonelist,ax,badlist,pose_color,bad_color,isMaster,isSpine)
-
-    #左上半身
-    isUpLeft=PlotAndColor(up_left_bonelist,ax,badlist,pose_color,bad_color,isMaster,isSpine)
-    #右上半身
-    isUpRight=PlotAndColor(up_right_bonelist,ax,badlist,pose_color,bad_color,isMaster,isSpine)
-
-    #左下半身
-    isDownLeft=PlotAndColor(down_left_bonelist,ax,badlist,pose_color,bad_color,isMaster,False)
-    #右下半身
-    isDownRight=PlotAndColor(down_right_bonelist,ax,badlist,pose_color,bad_color,isMaster,False)
-
-    #左指
-    PlotAndColor(left_finger_bonelist,ax,badlist,pose_color,bad_color,isMaster,isUpLeft)
-    #右指
-    PlotAndColor(right_finger_bonelist,ax,badlist,pose_color,bad_color,isMaster,isUpRight)   
-
-    #つま先かかと
-    PlotAndColor(right_toesheel_bonelist,ax,badlist,pose_color,bad_color,isMaster,isDownLeft)
-    #つま先かかと
-    PlotAndColor(left_toesheel_bonelist,ax,badlist,pose_color,bad_color,isMaster,isDownRight)
-
-
-    plt.xlabel('X-label')
-    plt.ylabel('Z-label')
-
-    return
-
-#良し悪しを判定する
-def isGood(lists,bad):
-    l=[bad]*len(lists)
-    out=[False]*len(lists)
-    for i in range(len(lists)):
-        if lists[i]>l[i]:
-            out[i]=True
-
-    return out
-
 # World座標プロット ########################################################
 #if plot_world_landmark:
-import matplotlib.pyplot as plt
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
 fig.subplots_adjust(left=0.0, right=1, bottom=0, top=1)
@@ -920,10 +928,13 @@ for motion_1,motion_2,rot1,rot2 in zip(Motions_1,Motions_2,Motions_rot1,Motions_
         print("中断")
         ax.cla()
         sys.exit()
-        break
 
 #score=ScoreLearning(np.array(length_list),score_est)
 
 #score_est=np.array([8]*len(train_data)) #ユーザーの推定したスコア
 #score=ScoreLearning(np.array(train_data),score_est)
 
+
+
+def __init__():
+    main()
