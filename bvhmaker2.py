@@ -16,6 +16,9 @@ import keyboard
 import sys
 import matplotlib.pyplot as plt
 
+#matplotlib表示用
+import matplotlib.animation as animation
+from matplotlib.animation import FuncAnimation
 
 
 #np配列をスペースありのstring文字列に変換
@@ -461,480 +464,498 @@ def isGood(lists,bad):
     return out
 
 
-#print("ーーーーーーーーーーーーーーーーーーーーーーーーーーーーー")
-#DB取得
-conn = sqlite3.connect(r'main.db')
-#カーソル作成
-c1 = conn.cursor()
-c2 = conn.cursor()
+#比較
+def motion_comparison(frames1,frames2):
+    Motions_1=[]
+    Motions_2=[]
+    Motions_rot1=[]
+    Motions_rot2=[]
 
-#テーブルを指定しデータを取得
-c1.execute("select * from pose1")#教師データ
-c2.execute("select * from pose2")#生徒データ
+    VectorUp=np.array([0,0,0])#上ベクトル
 
-#データベース取得
-#poselistはフレームごとの情報=====================
-#各フレームにはの情報(インデックス、各関節の情報、現在時間の情報）が入っている
-#各関節には[信頼度,(x座標,y座標,z座標)]の情報が入る========
+    #フレームごとに取得
+    for index, (landmarks1,landmarks2) in enumerate(zip(frames1,frames2)):
 
+        landmark=(landmarks1[1])
+        
+        #教師の位置の設定。（L,Rは絶対位置、Left,Rightは相対位置）
+        #部位ごとに取得＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+        NoseAbsol=np.array(landmark[0])# 鼻
+        LHip=np.array(landmark[23])# 腰(左側)
+        RHip=np.array(landmark[24])# 腰(右側)
+        Base=((LHip+RHip)/2)#腰(左右腰の中間)
+        #上半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        LShoulder=np.array(landmark[11])# 左肩
+        RShoulder=np.array(landmark[12])# 右肩
+        LElbow=np.array(landmark[13])# 左肘
+        RElbow=np.array(landmark[14])# 右肘
+        LWrist=np.array(landmark[15])# 左手首
+        RWrist=np.array(landmark[16])# 右手首
+        LPinky=np.array(landmark[17])# 左子指
+        RPinky=np.array(landmark[18])# 右子指
+        LIndex=np.array(landmark[19])# 左人差し指
+        RIndex=np.array(landmark[20])# 左人差し指
+        LThumb=np.array(landmark[21])# 左親指
+        RThumb=np.array(landmark[22])# 右親指
+        #下半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        LKnee=np.array(landmark[25])# 左ひざ
+        RKnee=np.array(landmark[26])# 右ひざ
+        LAnkle=np.array(landmark[27])# 左足首
+        RAnkle=np.array(landmark[28])# 右足首
+        LHeel=np.array(landmark[29])# 左かかと
+        RHeel=np.array(landmark[30])# 右かかと
+        LToes=np.array(landmark[31])# 左つま先
+        RToes=np.array(landmark[32])# 右つま先
+        HeartAbsol=((LShoulder+RShoulder)/2)#胸（絶対位置）
+        #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        #前方ベクトルを取得
+        
+        get_forwardvec(LHip-HeartAbsol,RHip-HeartAbsol)
 
-#テーブル呼び出し
-#fetchallで全呼び出しするとtupleで書き換え不可なのでfetchmanyで一つずつ変換して呼び出す
-#frames1 = c1.fetchall()
-#frames2 = c2.fetchall()
-frames1 = []
-frames2 = []
-# 1行ずつlist型で取得
-rows = []
+        #教師のベクトル取得
+        #腰から上半身、右足、左足の三つに分かれる
+        #左足================================================================
+        LeftHip=(LHip-Base)#左腰
+        LeftKnee=(LKnee-LHip)#左ひざ
+        LeftAnkle=(LAnkle-LKnee)#左足首
+        LeftHeel=(LHeel-LAnkle)#左かかと
+        LeftToes=(LToes-LAnkle)#左つま先
+        #右足================================================================
+        RightHip=(RHip-Base)#右腰
+        RightKnee=(RKnee-RHip)#右ひざ
+        RightAnkle=(RAnkle-RKnee)#右足首
+        RightHeel=(RHeel-RAnkle)#右かかと
+        RightToes=(RToes-RAnkle)#右つま先
+        #上半身================================================================
+        Heart=(HeartAbsol-Base)#胸（相対位置）
+        Nose=(NoseAbsol-HeartAbsol)#鼻（相対位置）
+        #左腕
+        LeftShoulder=(LShoulder-Heart)#左肩
+        LeftElbow=(LElbow-LShoulder)#左ひじ
+        LeftWrist=(LWrist-LElbow)#左手首
+        LeftThumb=(LThumb-LWrist)#左親指
+        LeftIndex=(LIndex-LWrist)#左人差し指
+        LeftPinky=(LPinky-LWrist)#左小指
+        #右腕
+        RightShoulder=(RShoulder-Heart)#右肩
+        RightElbow=(RElbow-RShoulder)#右ひじ
+        RightWrist=(RWrist-RElbow)#右手首
+        RightThumb=(RThumb-RWrist)#右親指
+        RightIndex=(RIndex-RWrist)#右人差し指
+        RightPinky=(RPinky-RWrist)#右小指
+        
+        #上半身下半身をつなげる
+        LeftSide=(LShoulder-LHip)
+        RightSide=(RShoulder-RHip)
 
-while True:
-    row1 = c1.fetchmany(size=1)
-    row2 = c2.fetchmany(size=1)
-    if not row1 or not row2:
-        break
-    frames1.append([str(row1[0][0]),eval(row1[0][1]),float(row1[0][2])])
-    frames2.append([str(row2[0][0]),eval(row2[0][1]),float(row2[0][2])])
-    
+        #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        #角度
+        #左下半身
+        LeftHip_rot=rotxyz(VectorUp,LeftHip)        #左尻角度
+        LeftKnee_rot=rotxyz(LeftHip,LeftKnee)       #左足付け根角度
+        LeftKnee_rot_2=rotxyz(-LeftSide,LeftKnee)       #左足付け根角度2(Leftsideは尻→肩なので逆にする)
+        LeftAnkle_rot=rotxyz(LeftKnee,LeftAnkle)    #左ひざ角度
+        LeftToes_rot=rotxyz(LeftAnkle,LeftToes)     #左足首つま先角度
+        LeftHeel_rot=rotxyz(LeftAnkle,LeftHeel)     #左足首かかと角度
 
+        #右下半身
+        RightHip_rot=rotxyz(VectorUp,RightHip)          #右尻角度
+        RightKnee_rot=rotxyz(RightHip,RightKnee)        #右ひざ角度
+        RightKnee_rot_2=rotxyz(RightSide,RightKnee)        #右ひざ角度
+        RightAnkle_rot=rotxyz(RightKnee,RightAnkle)     #右足首角度
+        RightToes_rot=rotxyz(RightAnkle,RightToes)      #右足首つま先角度
+        RightHeel_rot=rotxyz(RightToes,RightHeel)       #右足首かかと角度
 
-print(frames1[-1][2])
-#nフレームの形に形成（30フレーム）
-frames1=fps_set(frames1,30)
-frames2=fps_set(frames2,30)
+        #上半身
+        Heart_rot=rotxyz(VectorUp,Heart)    #心臓角度
+        Nose_rot=rotxyz(Heart,Nose)         #鼻角度
 
+        #左上半身
+        LeftShoulder_rot=rotxyz(Heart,LeftShoulder)     #左までの角度 
+        LeftElbow_rot=rotxyz(LeftShoulder,LeftElbow)    #左腕付け根角度
+        LeftElbow_rot_2=rotxyz(LeftSide,LeftElbow)    #左腕付け根角度2
+        LeftWrist_rot=rotxyz(LeftElbow,LeftWrist)       #左ひじ角度
+        LeftThumb_rot=rotxyz(LeftWrist,LeftThumb)       #左手首親指角度
+        LeftIndex_rot=rotxyz(LeftWrist,LeftIndex)       #左手首中指角度
+        LeftPinky_rot=rotxyz(LeftWrist,LeftPinky)       #左手首小指角度
 
-
-
-
-VectorUp=np.array([0,0,0])#上ベクトル
-
-Motions_1=[]
-Motions_2=[]
-Motions_rot1=[]
-Motions_rot2=[]
-
-
-
-#フレームごとに取得
-for index, (landmarks1,landmarks2) in enumerate(zip(frames1,frames2)):
-
-    landmark=(landmarks1[1])
-    
-    #教師の位置の設定。（L,Rは絶対位置、Left,Rightは相対位置）
-    #部位ごとに取得＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
-    NoseAbsol=np.array(landmark[0])# 鼻
-    LHip=np.array(landmark[23])# 腰(左側)
-    RHip=np.array(landmark[24])# 腰(右側)
-    Base=((LHip+RHip)/2)#腰(左右腰の中間)
-    #上半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    LShoulder=np.array(landmark[11])# 左肩
-    RShoulder=np.array(landmark[12])# 右肩
-    LElbow=np.array(landmark[13])# 左肘
-    RElbow=np.array(landmark[14])# 右肘
-    LWrist=np.array(landmark[15])# 左手首
-    RWrist=np.array(landmark[16])# 右手首
-    LPinky=np.array(landmark[17])# 左子指
-    RPinky=np.array(landmark[18])# 右子指
-    LIndex=np.array(landmark[19])# 左人差し指
-    RIndex=np.array(landmark[20])# 左人差し指
-    LThumb=np.array(landmark[21])# 左親指
-    RThumb=np.array(landmark[22])# 右親指
-    #下半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    LKnee=np.array(landmark[25])# 左ひざ
-    RKnee=np.array(landmark[26])# 右ひざ
-    LAnkle=np.array(landmark[27])# 左足首
-    RAnkle=np.array(landmark[28])# 右足首
-    LHeel=np.array(landmark[29])# 左かかと
-    RHeel=np.array(landmark[30])# 右かかと
-    LToes=np.array(landmark[31])# 左つま先
-    RToes=np.array(landmark[32])# 右つま先
-    HeartAbsol=((LShoulder+RShoulder)/2)#胸（絶対位置）
-    #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    #前方ベクトルを取得
-    
-    get_forwardvec(LHip-HeartAbsol,RHip-HeartAbsol)
-
-    #教師のベクトル取得
-    #腰から上半身、右足、左足の三つに分かれる
-    #左足================================================================
-    LeftHip=(LHip-Base)#左腰
-    LeftKnee=(LKnee-LHip)#左ひざ
-    LeftAnkle=(LAnkle-LKnee)#左足首
-    LeftHeel=(LHeel-LAnkle)#左かかと
-    LeftToes=(LToes-LAnkle)#左つま先
-    #右足================================================================
-    RightHip=(RHip-Base)#右腰
-    RightKnee=(RKnee-RHip)#右ひざ
-    RightAnkle=(RAnkle-RKnee)#右足首
-    RightHeel=(RHeel-RAnkle)#右かかと
-    RightToes=(RToes-RAnkle)#右つま先
-    #上半身================================================================
-    Heart=(HeartAbsol-Base)#胸（相対位置）
-    Nose=(NoseAbsol-HeartAbsol)#鼻（相対位置）
-    #左腕
-    LeftShoulder=(LShoulder-Heart)#左肩
-    LeftElbow=(LElbow-LShoulder)#左ひじ
-    LeftWrist=(LWrist-LElbow)#左手首
-    LeftThumb=(LThumb-LWrist)#左親指
-    LeftIndex=(LIndex-LWrist)#左人差し指
-    LeftPinky=(LPinky-LWrist)#左小指
-    #右腕
-    RightShoulder=(RShoulder-Heart)#右肩
-    RightElbow=(RElbow-RShoulder)#右ひじ
-    RightWrist=(RWrist-RElbow)#右手首
-    RightThumb=(RThumb-RWrist)#右親指
-    RightIndex=(RIndex-RWrist)#右人差し指
-    RightPinky=(RPinky-RWrist)#右小指
-    
-    #上半身下半身をつなげる
-    LeftSide=(LShoulder-LHip)
-    RightSide=(RShoulder-RHip)
-
-    #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    #角度
-    #左下半身
-    LeftHip_rot=rotxyz(VectorUp,LeftHip)        #左尻角度
-    LeftKnee_rot=rotxyz(LeftHip,LeftKnee)       #左足付け根角度
-    LeftKnee_rot_2=rotxyz(-LeftSide,LeftKnee)       #左足付け根角度2(Leftsideは尻→肩なので逆にする)
-    LeftAnkle_rot=rotxyz(LeftKnee,LeftAnkle)    #左ひざ角度
-    LeftToes_rot=rotxyz(LeftAnkle,LeftToes)     #左足首つま先角度
-    LeftHeel_rot=rotxyz(LeftAnkle,LeftHeel)     #左足首かかと角度
-
-    #右下半身
-    RightHip_rot=rotxyz(VectorUp,RightHip)          #右尻角度
-    RightKnee_rot=rotxyz(RightHip,RightKnee)        #右ひざ角度
-    RightKnee_rot_2=rotxyz(RightSide,RightKnee)        #右ひざ角度
-    RightAnkle_rot=rotxyz(RightKnee,RightAnkle)     #右足首角度
-    RightToes_rot=rotxyz(RightAnkle,RightToes)      #右足首つま先角度
-    RightHeel_rot=rotxyz(RightToes,RightHeel)       #右足首かかと角度
-
-    #上半身
-    Heart_rot=rotxyz(VectorUp,Heart)    #心臓角度
-    Nose_rot=rotxyz(Heart,Nose)         #鼻角度
-
-    #左上半身
-    LeftShoulder_rot=rotxyz(Heart,LeftShoulder)     #左までの角度 
-    LeftElbow_rot=rotxyz(LeftShoulder,LeftElbow)    #左腕付け根角度
-    LeftElbow_rot_2=rotxyz(LeftSide,LeftElbow)    #左腕付け根角度2
-    LeftWrist_rot=rotxyz(LeftElbow,LeftWrist)       #左ひじ角度
-    LeftThumb_rot=rotxyz(LeftWrist,LeftThumb)       #左手首親指角度
-    LeftIndex_rot=rotxyz(LeftWrist,LeftIndex)       #左手首中指角度
-    LeftPinky_rot=rotxyz(LeftWrist,LeftPinky)       #左手首小指角度
-
-    #右上半身
-    RightShoulder_rot=rotxyz(Heart,RightShoulder)       #右肩までの角度 
-    RightElbow_rot=rotxyz(RightShoulder,RightElbow)     #右腕付け根角度
-    RightElbow_rot_2=rotxyz(RightSide,RightElbow)     #右腕付け根角度2
-    RightWrist_rot=rotxyz(RightElbow,RightWrist)        #右ひじ角度
-    RightThumb_rot=rotxyz(RightWrist,RightThumb)        #右手首親指角度
-    RightIndex_rot=rotxyz(RightWrist,RightIndex)        #右手首中指角度
-    RightPinky_rot=rotxyz(RightWrist,RightPinky)        #右手首小指角度
-    
-
-    #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-
-    landmark=(landmarks2[1])
-
-    
-    #教師の位置の設定。（L,Rは絶対位置、Left,Rightは相対位置）
-    #部位ごとに取得＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
-    NoseAbsol2=np.array(landmark[0])# 鼻
-    LHip2=np.array(landmark[23])# 腰(左側)
-    RHip2=np.array(landmark[24])# 腰(右側)
-    Base2=((LHip2+RHip2)/2)#腰(左右腰の中間)
-    #上半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    LShoulder2=np.array(landmark[11])# 左肩
-    RShoulder2=np.array(landmark[12])# 右肩
-    LElbow2=np.array(landmark[13])# 左肘
-    RElbow2=np.array(landmark[14])# 右肘
-    LWrist2=np.array(landmark[15])# 左手首
-    RWrist2=np.array(landmark[16])# 右手首
-    LPinky2=np.array(landmark[17])# 左子指
-    RPinky2=np.array(landmark[18])# 右子指
-    LIndex2=np.array(landmark[19])# 左人差し指
-    RIndex2=np.array(landmark[20])# 左人差し指
-    LThumb2=np.array(landmark[21])# 左親指
-    RThumb2=np.array(landmark[22])# 右親指
-    #下半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    LKnee2=np.array(landmark[25])# 左ひざ
-    RKnee2=np.array(landmark[26])# 右ひざ
-    LAnkle2=np.array(landmark[27])# 左足首
-    RAnkle2=np.array(landmark[28])# 右足首
-    LHeel2=np.array(landmark[29])# 左かかと
-    RHeel2=np.array(landmark[30])# 右かかと
-    LToes2=np.array(landmark[31])# 左つま先
-    RToes2=np.array(landmark[32])# 右つま先
-    HeartAbsol2=((LShoulder2+RShoulder2)/2)#胸（絶対位置）
-    #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    #前方ベクトルを取得
-    if index==0:
-        vec_after=get_forwardvec(LHip-HeartAbsol,RHip-HeartAbsol)
-        vec_before=get_forwardvec(LHip2-HeartAbsol2,RHip2-HeartAbsol2)
-
-        #回転角、回転方向
-        deg,turn_muki=rotxyz2(vec_before,vec_after)
+        #右上半身
+        RightShoulder_rot=rotxyz(Heart,RightShoulder)       #右肩までの角度 
+        RightElbow_rot=rotxyz(RightShoulder,RightElbow)     #右腕付け根角度
+        RightElbow_rot_2=rotxyz(RightSide,RightElbow)     #右腕付け根角度2
+        RightWrist_rot=rotxyz(RightElbow,RightWrist)        #右ひじ角度
+        RightThumb_rot=rotxyz(RightWrist,RightThumb)        #右手首親指角度
+        RightIndex_rot=rotxyz(RightWrist,RightIndex)        #右手首中指角度
+        RightPinky_rot=rotxyz(RightWrist,RightPinky)        #右手首小指角度
         
 
-    #回転ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    #部位ごとに取得＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
-    veclists=[
-                NoseAbsol2,LHip2,RHip2,Base2,
-              LShoulder2,RShoulder2,LElbow2,RElbow2,LWrist2,RWrist2,
-              LPinky2,RPinky2,LIndex2,RIndex2,LThumb2,RThumb2,
-              LKnee2,RKnee2,LAnkle2,RAnkle2,
-              LHeel2,RHeel2,LToes2,RToes2,HeartAbsol2
-              ]
-    
-    for i in range(len(veclists)):
-        veclists[i]=yrot(veclists[i],deg,turn_muki)
+        #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+
+        landmark=(landmarks2[1])
+
         
-    
-    
-    NoseAbsol2=veclists[0]# 鼻
-    LHip2=veclists[1]# 腰(左側)
-    RHip2=veclists[2]# 腰(右側)
-    Base2=veclists[3]#腰(左右腰の中間)
-    #上半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    LShoulder2=veclists[4]# 左肩
-    RShoulder2=veclists[5]# 右肩
-    LElbow2=veclists[6]# 左肘
-    RElbow2=veclists[7]# 右肘
-    LWrist2=veclists[8]# 左手首
-    RWrist2=veclists[9]# 右手首
-    LPinky2=veclists[10]# 左子指
-    RPinky2=veclists[11]# 右子指
-    LIndex2=veclists[12]# 左人差し指
-    RIndex2=veclists[13]# 左人差し指
-    LThumb2=veclists[14]# 左親指
-    RThumb2=veclists[15]# 右親指
-    #下半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    LKnee2=veclists[16]# 左ひざ
-    RKnee2=veclists[17]# 右ひざ
-    LAnkle2=veclists[18]# 左足首
-    RAnkle2=veclists[19]# 右足首
-    LHeel2=veclists[20]# 左かかと
-    RHeel2=veclists[21]# 右かかと
-    LToes2=veclists[22]# 左つま先
-    RToes2=veclists[23]# 右つま先
-    HeartAbsol2=veclists[24]#胸（絶対位置）
+        #教師の位置の設定。（L,Rは絶対位置、Left,Rightは相対位置）
+        #部位ごとに取得＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+        NoseAbsol2=np.array(landmark[0])# 鼻
+        LHip2=np.array(landmark[23])# 腰(左側)
+        RHip2=np.array(landmark[24])# 腰(右側)
+        Base2=((LHip2+RHip2)/2)#腰(左右腰の中間)
+        #上半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        LShoulder2=np.array(landmark[11])# 左肩
+        RShoulder2=np.array(landmark[12])# 右肩
+        LElbow2=np.array(landmark[13])# 左肘
+        RElbow2=np.array(landmark[14])# 右肘
+        LWrist2=np.array(landmark[15])# 左手首
+        RWrist2=np.array(landmark[16])# 右手首
+        LPinky2=np.array(landmark[17])# 左子指
+        RPinky2=np.array(landmark[18])# 右子指
+        LIndex2=np.array(landmark[19])# 左人差し指
+        RIndex2=np.array(landmark[20])# 左人差し指
+        LThumb2=np.array(landmark[21])# 左親指
+        RThumb2=np.array(landmark[22])# 右親指
+        #下半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        LKnee2=np.array(landmark[25])# 左ひざ
+        RKnee2=np.array(landmark[26])# 右ひざ
+        LAnkle2=np.array(landmark[27])# 左足首
+        RAnkle2=np.array(landmark[28])# 右足首
+        LHeel2=np.array(landmark[29])# 左かかと
+        RHeel2=np.array(landmark[30])# 右かかと
+        LToes2=np.array(landmark[31])# 左つま先
+        RToes2=np.array(landmark[32])# 右つま先
+        HeartAbsol2=((LShoulder2+RShoulder2)/2)#胸（絶対位置）
+        #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        #前方ベクトルを取得
+        if index==0:
+            vec_after=get_forwardvec(LHip-HeartAbsol,RHip-HeartAbsol)
+            vec_before=get_forwardvec(LHip2-HeartAbsol2,RHip2-HeartAbsol2)
+
+            #回転角、回転方向
+            deg,turn_muki=rotxyz2(vec_before,vec_after)
+            
+
+        #回転ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        #部位ごとに取得＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+        veclists=[
+                    NoseAbsol2,LHip2,RHip2,Base2,
+                LShoulder2,RShoulder2,LElbow2,RElbow2,LWrist2,RWrist2,
+                LPinky2,RPinky2,LIndex2,RIndex2,LThumb2,RThumb2,
+                LKnee2,RKnee2,LAnkle2,RAnkle2,
+                LHeel2,RHeel2,LToes2,RToes2,HeartAbsol2
+                ]
+        
+        for i in range(len(veclists)):
+            veclists[i]=yrot(veclists[i],deg,turn_muki)
+            
+        
+        
+        NoseAbsol2=veclists[0]# 鼻
+        LHip2=veclists[1]# 腰(左側)
+        RHip2=veclists[2]# 腰(右側)
+        Base2=veclists[3]#腰(左右腰の中間)
+        #上半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        LShoulder2=veclists[4]# 左肩
+        RShoulder2=veclists[5]# 右肩
+        LElbow2=veclists[6]# 左肘
+        RElbow2=veclists[7]# 右肘
+        LWrist2=veclists[8]# 左手首
+        RWrist2=veclists[9]# 右手首
+        LPinky2=veclists[10]# 左子指
+        RPinky2=veclists[11]# 右子指
+        LIndex2=veclists[12]# 左人差し指
+        RIndex2=veclists[13]# 左人差し指
+        LThumb2=veclists[14]# 左親指
+        RThumb2=veclists[15]# 右親指
+        #下半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        LKnee2=veclists[16]# 左ひざ
+        RKnee2=veclists[17]# 右ひざ
+        LAnkle2=veclists[18]# 左足首
+        RAnkle2=veclists[19]# 右足首
+        LHeel2=veclists[20]# 左かかと
+        RHeel2=veclists[21]# 右かかと
+        LToes2=veclists[22]# 左つま先
+        RToes2=veclists[23]# 右つま先
+        HeartAbsol2=veclists[24]#胸（絶対位置）
 
 
 
 
-    #生徒のベクトル取得
-    #腰から上半身、右足、左足の三つに分かれる
+        #生徒のベクトル取得
+        #腰から上半身、右足、左足の三つに分かれる
 
-    #左足================================================================
-    LeftHip2=(LHip2-Base2)#左腰
-    LeftKnee2=(LKnee2-LHip2)#左ひざ
-    LeftAnkle2=(LAnkle2-LKnee2)#左足首
-    LeftHeel2=(LHeel2-LAnkle2)#左かかと
-    LeftToes2=(LToes2-LAnkle2)#左つま先
+        #左足================================================================
+        LeftHip2=(LHip2-Base2)#左腰
+        LeftKnee2=(LKnee2-LHip2)#左ひざ
+        LeftAnkle2=(LAnkle2-LKnee2)#左足首
+        LeftHeel2=(LHeel2-LAnkle2)#左かかと
+        LeftToes2=(LToes2-LAnkle2)#左つま先
 
-    #右足================================================================
-    RightHip2=(RHip2-Base2)#右腰
-    RightKnee2=(RKnee2-RHip2)#右ひざ
-    RightAnkle2=(RAnkle2-RKnee2)#右足首
-    RightHeel2=(RHeel2-RAnkle2)#右かかと
-    RightToes2=(RToes2-RAnkle2)#右つま先
+        #右足================================================================
+        RightHip2=(RHip2-Base2)#右腰
+        RightKnee2=(RKnee2-RHip2)#右ひざ
+        RightAnkle2=(RAnkle2-RKnee2)#右足首
+        RightHeel2=(RHeel2-RAnkle2)#右かかと
+        RightToes2=(RToes2-RAnkle2)#右つま先
 
-    #上半身================================================================
-    Heart2=(HeartAbsol2-Base2)#胸（相対位置）
-    Nose2=(NoseAbsol2-HeartAbsol2)#鼻（相対位置）
+        #上半身================================================================
+        Heart2=(HeartAbsol2-Base2)#胸（相対位置）
+        Nose2=(NoseAbsol2-HeartAbsol2)#鼻（相対位置）
 
-    #左腕
-    LeftShoulder2=(LShoulder2-Heart2)#左肩
-    LeftElbow2=(LElbow2-LShoulder2)#左ひじ
-    LeftWrist2=(LWrist2-LElbow2)#左手首
-    LeftThumb2=(LThumb2-LWrist2)#左親指
-    LeftIndex2=(LIndex2-LWrist2)#左人差し指
-    LeftPinky2=(LPinky2-LWrist2)#左小指
+        #左腕
+        LeftShoulder2=(LShoulder2-Heart2)#左肩
+        LeftElbow2=(LElbow2-LShoulder2)#左ひじ
+        LeftWrist2=(LWrist2-LElbow2)#左手首
+        LeftThumb2=(LThumb2-LWrist2)#左親指
+        LeftIndex2=(LIndex2-LWrist2)#左人差し指
+        LeftPinky2=(LPinky2-LWrist2)#左小指
 
-    #右腕
-    RightShoulder2=(RShoulder2-Heart2)#右肩
-    RightElbow2=(RElbow2-RShoulder2)#右ひじ
-    RightWrist2=(RWrist2-RElbow2)#右手首
-    RightThumb2=(RThumb2-RWrist2)#右親指
-    RightIndex2=(RIndex2-RWrist2)#右人差し指
-    RightPinky2=(RPinky2-RWrist2)#右小指
+        #右腕
+        RightShoulder2=(RShoulder2-Heart2)#右肩
+        RightElbow2=(RElbow2-RShoulder2)#右ひじ
+        RightWrist2=(RWrist2-RElbow2)#右手首
+        RightThumb2=(RThumb2-RWrist2)#右親指
+        RightIndex2=(RIndex2-RWrist2)#右人差し指
+        RightPinky2=(RPinky2-RWrist2)#右小指
 
-    #上半身下半身をつなげる
-    LeftSide2=(LShoulder2-LHip2)
-    RightSide2=(RShoulder2-RHip2)
+        #上半身下半身をつなげる
+        LeftSide2=(LShoulder2-LHip2)
+        RightSide2=(RShoulder2-RHip2)
 
-    #角度
-    #左下半身
-    LeftHip_rot2=rotxyz(VectorUp,LeftHip2)        #左尻角度
-    LeftKnee_rot2=rotxyz(LeftHip2,LeftKnee2)       #左足付け根角度
-    LeftKnee_rot2_2=rotxyz(-LeftSide2,LeftKnee2)       #左足付け根角度2(Leftsideは尻→肩なので逆にする)
-    LeftAnkle_rot2=rotxyz(LeftKnee2,LeftAnkle2)    #左ひざ角度
-    LeftToes_rot2=rotxyz(LeftAnkle2,LeftToes2)     #左足首つま先角度
-    LeftHeel_rot2=rotxyz(LeftAnkle2,LeftHeel2)     #左足首かかと角度
+        #角度
+        #左下半身
+        LeftHip_rot2=rotxyz(VectorUp,LeftHip2)        #左尻角度
+        LeftKnee_rot2=rotxyz(LeftHip2,LeftKnee2)       #左足付け根角度
+        LeftKnee_rot2_2=rotxyz(-LeftSide2,LeftKnee2)       #左足付け根角度2(Leftsideは尻→肩なので逆にする)
+        LeftAnkle_rot2=rotxyz(LeftKnee2,LeftAnkle2)    #左ひざ角度
+        LeftToes_rot2=rotxyz(LeftAnkle2,LeftToes2)     #左足首つま先角度
+        LeftHeel_rot2=rotxyz(LeftAnkle2,LeftHeel2)     #左足首かかと角度
 
-    #右下半身
-    RightHip_rot2=rotxyz(VectorUp,RightHip2)          #右尻角度
-    RightKnee_rot2=rotxyz(RightHip2,RightKnee2)        #右ひざ角度
-    RightKnee_rot2_2=rotxyz(RightSide2,RightKnee2)        #右ひざ角度
-    RightAnkle_rot2=rotxyz(RightKnee2,RightAnkle2)     #右足首角度
-    RightToes_rot2=rotxyz(RightAnkle2,RightToes2)      #右足首つま先角度
-    RightHeel_rot2=rotxyz(RightToes2,RightHeel2)       #右足首かかと角度
+        #右下半身
+        RightHip_rot2=rotxyz(VectorUp,RightHip2)          #右尻角度
+        RightKnee_rot2=rotxyz(RightHip2,RightKnee2)        #右ひざ角度
+        RightKnee_rot2_2=rotxyz(RightSide2,RightKnee2)        #右ひざ角度
+        RightAnkle_rot2=rotxyz(RightKnee2,RightAnkle2)     #右足首角度
+        RightToes_rot2=rotxyz(RightAnkle2,RightToes2)      #右足首つま先角度
+        RightHeel_rot2=rotxyz(RightToes2,RightHeel2)       #右足首かかと角度
 
-    #上半身
-    Heart_rot2=rotxyz(VectorUp,Heart2)    #心臓角度
-    Nose_rot2=rotxyz(Heart2,Nose2)         #鼻角度
+        #上半身
+        Heart_rot2=rotxyz(VectorUp,Heart2)    #心臓角度
+        Nose_rot2=rotxyz(Heart2,Nose2)         #鼻角度
 
-    #左上半身
-    LeftShoulder_rot2=rotxyz(Heart2,LeftShoulder2)     #左までの角度 
-    LeftElbow_rot2=rotxyz(LeftShoulder2,LeftElbow2)    #左腕付け根角度
-    LeftElbow_rot2_2=rotxyz(LeftSide2,LeftElbow2)    #左腕付け根角度2
-    LeftWrist_rot2=rotxyz(LeftElbow2,LeftWrist2)       #左ひじ角度
-    LeftThumb_rot2=rotxyz(LeftWrist2,LeftThumb2)       #左手首親指角度
-    LeftIndex_rot2=rotxyz(LeftWrist2,LeftIndex2)       #左手首中指角度
-    LeftPinky_rot2=rotxyz(LeftWrist2,LeftPinky2)       #左手首小指角度
+        #左上半身
+        LeftShoulder_rot2=rotxyz(Heart2,LeftShoulder2)     #左までの角度 
+        LeftElbow_rot2=rotxyz(LeftShoulder2,LeftElbow2)    #左腕付け根角度
+        LeftElbow_rot2_2=rotxyz(LeftSide2,LeftElbow2)    #左腕付け根角度2
+        LeftWrist_rot2=rotxyz(LeftElbow2,LeftWrist2)       #左ひじ角度
+        LeftThumb_rot2=rotxyz(LeftWrist2,LeftThumb2)       #左手首親指角度
+        LeftIndex_rot2=rotxyz(LeftWrist2,LeftIndex2)       #左手首中指角度
+        LeftPinky_rot2=rotxyz(LeftWrist2,LeftPinky2)       #左手首小指角度
 
-    #右上半身
-    RightShoulder_rot2=rotxyz(Heart2,RightShoulder2)       #右肩までの角度 
-    RightElbow_rot2=rotxyz(RightShoulder2,RightElbow)     #右腕付け根角度
-    RightElbow_rot2_2=rotxyz(RightSide2,RightElbow2)     #右腕付け根角度2
-    RightWrist_rot2=rotxyz(RightElbow2,RightWrist2)        #右ひじ角度
-    RightThumb_rot2=rotxyz(RightWrist2,RightThumb2)        #右手首親指角度
-    RightIndex_rot2=rotxyz(RightWrist2,RightIndex2)        #右手首中指角度
-    RightPinky_rot2=rotxyz(RightWrist2,RightPinky2)        #右手首小指角度
-    #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        #右上半身
+        RightShoulder_rot2=rotxyz(Heart2,RightShoulder2)       #右肩までの角度 
+        RightElbow_rot2=rotxyz(RightShoulder2,RightElbow)     #右腕付け根角度
+        RightElbow_rot2_2=rotxyz(RightSide2,RightElbow2)     #右腕付け根角度2
+        RightWrist_rot2=rotxyz(RightElbow2,RightWrist2)        #右ひじ角度
+        RightThumb_rot2=rotxyz(RightWrist2,RightThumb2)        #右手首親指角度
+        RightIndex_rot2=rotxyz(RightWrist2,RightIndex2)        #右手首中指角度
+        RightPinky_rot2=rotxyz(RightWrist2,RightPinky2)        #右手首小指角度
+        #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
 
-    #ーーーーーーーーーーーーーーーーーーーーーーーーー
-    #骨格形成
-    Base_out=((LHip+RHip)/2)#腰(左右腰の中間)（これが中心なのでマスターデータ側の座標に合わせる）
-    LHip_out=vectorSet(Base_out,LeftHip2,LeftHip)# 腰(左側)
-    RHip_out=vectorSet(Base_out,RightHip2,RightHip)# 腰(右側)
-    Heart_out=vectorSet(Base_out,Heart2,Heart)#胸（絶対位置）
-    Nose_out=vectorSet(Heart_out,Nose2,Nose)# 鼻
-    #上半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    LShoulder_out=vectorSet(Heart_out,LeftShoulder2,LeftShoulder)# 左肩
-    RShoulder_out=vectorSet(Heart_out,RightShoulder2,RightShoulder)# 右肩
-    LElbow_out=vectorSet(LShoulder_out,LeftElbow2,LeftElbow)# 左肘
-    RElbow_out=vectorSet(RShoulder_out,RightElbow2,RightElbow)# 右肘
-    LWrist_out=vectorSet(LElbow_out,LeftWrist2,LeftWrist)# 左手首
-    RWrist_out=vectorSet(RElbow_out,RightWrist2,RightWrist)# 右手首
+        #ーーーーーーーーーーーーーーーーーーーーーーーーー
+        #骨格形成
+        Base_out=((LHip+RHip)/2)#腰(左右腰の中間)（これが中心なのでマスターデータ側の座標に合わせる）
+        LHip_out=vectorSet(Base_out,LeftHip2,LeftHip)# 腰(左側)
+        RHip_out=vectorSet(Base_out,RightHip2,RightHip)# 腰(右側)
+        Heart_out=vectorSet(Base_out,Heart2,Heart)#胸（絶対位置）
+        Nose_out=vectorSet(Heart_out,Nose2,Nose)# 鼻
+        #上半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        LShoulder_out=vectorSet(Heart_out,LeftShoulder2,LeftShoulder)# 左肩
+        RShoulder_out=vectorSet(Heart_out,RightShoulder2,RightShoulder)# 右肩
+        LElbow_out=vectorSet(LShoulder_out,LeftElbow2,LeftElbow)# 左肘
+        RElbow_out=vectorSet(RShoulder_out,RightElbow2,RightElbow)# 右肘
+        LWrist_out=vectorSet(LElbow_out,LeftWrist2,LeftWrist)# 左手首
+        RWrist_out=vectorSet(RElbow_out,RightWrist2,RightWrist)# 右手首
 
-    LPinky_out=vectorSet(LWrist_out,LeftPinky2,LeftPinky)# 左子指
-    RPinky_out=vectorSet(RWrist_out,RightPinky2,RightPinky)# 右子指
-    LIndex_out=vectorSet(LWrist_out,LeftIndex2,LeftIndex)# 左人差し指
-    RIndex_out=vectorSet(RWrist_out,RightIndex2,RightIndex)# 左人差し指
-    LThumb_out=vectorSet(LWrist_out,LeftThumb2,LeftThumb)# 左親指
-    RThumb_out=vectorSet(RWrist_out,RightThumb2,RightThumb)# 右親指
-    #下半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    LKnee_out=vectorSet(LHip_out,LeftKnee2,LeftKnee)# 左ひざ
-    RKnee_out=vectorSet(RHip_out,RightKnee2,RightKnee)# 右ひざ
-    LAnkle_out=vectorSet(LKnee_out,LeftAnkle2,LeftAnkle)# 左足首
-    RAnkle_out=vectorSet(RKnee_out,RightAnkle2,RightAnkle)# 右足首
-    LHeel_out=vectorSet(LAnkle_out,LeftHeel2,LeftHeel) #左かかと
-    RHeel_out=vectorSet(RAnkle_out,RightHeel2,RightHeel)# 右かかと
-    LToes_out=vectorSet(LAnkle_out,LeftToes2,LeftToes)# 左つま先
-    RToes_out=vectorSet(RAnkle_out,RightToes2,RightToes)# 右つま先
-    
-    #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    #教師データをリスト化
-    out_list_1=[
-            Base,
-              LHip,LKnee,LAnkle,LToes,LHeel,
-              RHip,RKnee,RAnkle,RToes,RHeel,
-              HeartAbsol,NoseAbsol,
-              LShoulder,LElbow,LWrist,LThumb,LIndex,LPinky,
-              RShoulder,RElbow,RWrist,RThumb,RIndex,RPinky
-              ]
-    #生徒データを形成後リスト化
-    out_list_2=[
-            Base_out,#0
-              LHip_out,LKnee_out,LAnkle_out,LToes_out,LHeel_out,#1~5
-              RHip_out,RKnee_out,RAnkle_out,RToes_out,RHeel_out,#6~10
-              Heart_out,Nose_out,                               #11~12
-              LShoulder_out,LElbow_out,LWrist_out,LThumb_out,LIndex_out,LPinky_out,#13~18
-              RShoulder_out,RElbow_out,RWrist_out,RThumb_out,RIndex_out,RPinky_out#19~24
-              ]
-    
-    #角度リスト
-    rot_lists=[
-        LeftHip_rot,[LeftKnee_rot,LeftKnee_rot_2],LeftAnkle_rot,LeftToes_rot,LeftHeel_rot,#左下半身
-        RightHip_rot,[RightKnee_rot,RightKnee_rot_2],RightAnkle_rot,RightToes_rot,RightHeel_rot,#右下半身
-        Heart_rot,Nose_rot,
-        LeftShoulder_rot,[LeftElbow_rot,LeftElbow_rot_2],LeftWrist_rot,LeftThumb_rot,LeftIndex_rot,LeftPinky_rot,#左上半身
-        RightShoulder_rot,[RightElbow_rot,RightElbow_rot_2],RightWrist_rot,RightThumb_rot,RightIndex_rot,RightPinky_rot#右上半身
-    ]    
-    
-    #角度リスト
-    rot_lists2=[
-        LeftHip_rot2,[LeftKnee_rot2,LeftKnee_rot2_2],LeftAnkle_rot2,LeftToes_rot2,LeftHeel_rot2,#左下半身
-        RightHip_rot2,[RightKnee_rot2,RightKnee_rot2_2],RightAnkle_rot2,RightToes_rot2,RightHeel_rot2,#右下半身
-        Heart_rot2,Nose_rot2,
-        LeftShoulder_rot2,[LeftElbow_rot2,LeftElbow_rot2_2],LeftWrist_rot2,LeftThumb_rot2,LeftIndex_rot2,LeftPinky_rot2,#左上半身
-        RightShoulder_rot2,[RightElbow_rot2,RightElbow_rot2_2],RightWrist_rot2,RightThumb_rot2,RightIndex_rot2,RightPinky_rot2#右上半身
-    ]
+        LPinky_out=vectorSet(LWrist_out,LeftPinky2,LeftPinky)# 左子指
+        RPinky_out=vectorSet(RWrist_out,RightPinky2,RightPinky)# 右子指
+        LIndex_out=vectorSet(LWrist_out,LeftIndex2,LeftIndex)# 左人差し指
+        RIndex_out=vectorSet(RWrist_out,RightIndex2,RightIndex)# 左人差し指
+        LThumb_out=vectorSet(LWrist_out,LeftThumb2,LeftThumb)# 左親指
+        RThumb_out=vectorSet(RWrist_out,RightThumb2,RightThumb)# 右親指
+        #下半身ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        LKnee_out=vectorSet(LHip_out,LeftKnee2,LeftKnee)# 左ひざ
+        RKnee_out=vectorSet(RHip_out,RightKnee2,RightKnee)# 右ひざ
+        LAnkle_out=vectorSet(LKnee_out,LeftAnkle2,LeftAnkle)# 左足首
+        RAnkle_out=vectorSet(RKnee_out,RightAnkle2,RightAnkle)# 右足首
+        LHeel_out=vectorSet(LAnkle_out,LeftHeel2,LeftHeel) #左かかと
+        RHeel_out=vectorSet(RAnkle_out,RightHeel2,RightHeel)# 右かかと
+        LToes_out=vectorSet(LAnkle_out,LeftToes2,LeftToes)# 左つま先
+        RToes_out=vectorSet(RAnkle_out,RightToes2,RightToes)# 右つま先
+        
+        #ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        #教師データをリスト化
+        out_list_1=[
+                Base,
+                LHip,LKnee,LAnkle,LToes,LHeel,
+                RHip,RKnee,RAnkle,RToes,RHeel,
+                HeartAbsol,NoseAbsol,
+                LShoulder,LElbow,LWrist,LThumb,LIndex,LPinky,
+                RShoulder,RElbow,RWrist,RThumb,RIndex,RPinky
+                ]
+        #生徒データを形成後リスト化
+        out_list_2=[
+                Base_out,#0
+                LHip_out,LKnee_out,LAnkle_out,LToes_out,LHeel_out,#1~5
+                RHip_out,RKnee_out,RAnkle_out,RToes_out,RHeel_out,#6~10
+                Heart_out,Nose_out,                               #11~12
+                LShoulder_out,LElbow_out,LWrist_out,LThumb_out,LIndex_out,LPinky_out,#13~18
+                RShoulder_out,RElbow_out,RWrist_out,RThumb_out,RIndex_out,RPinky_out#19~24
+                ]
+        
+        #角度リスト
+        rot_lists=[
+            LeftHip_rot,[LeftKnee_rot,LeftKnee_rot_2],LeftAnkle_rot,LeftToes_rot,LeftHeel_rot,#左下半身
+            RightHip_rot,[RightKnee_rot,RightKnee_rot_2],RightAnkle_rot,RightToes_rot,RightHeel_rot,#右下半身
+            Heart_rot,Nose_rot,
+            LeftShoulder_rot,[LeftElbow_rot,LeftElbow_rot_2],LeftWrist_rot,LeftThumb_rot,LeftIndex_rot,LeftPinky_rot,#左上半身
+            RightShoulder_rot,[RightElbow_rot,RightElbow_rot_2],RightWrist_rot,RightThumb_rot,RightIndex_rot,RightPinky_rot#右上半身
+        ]    
+        
+        #角度リスト
+        rot_lists2=[
+            LeftHip_rot2,[LeftKnee_rot2,LeftKnee_rot2_2],LeftAnkle_rot2,LeftToes_rot2,LeftHeel_rot2,#左下半身
+            RightHip_rot2,[RightKnee_rot2,RightKnee_rot2_2],RightAnkle_rot2,RightToes_rot2,RightHeel_rot2,#右下半身
+            Heart_rot2,Nose_rot2,
+            LeftShoulder_rot2,[LeftElbow_rot2,LeftElbow_rot2_2],LeftWrist_rot2,LeftThumb_rot2,LeftIndex_rot2,LeftPinky_rot2,#左上半身
+            RightShoulder_rot2,[RightElbow_rot2,RightElbow_rot2_2],RightWrist_rot2,RightThumb_rot2,RightIndex_rot2,RightPinky_rot2#右上半身
+        ]
 
 
-    #モーション作成
-    Motions_1.append(out_list_1)
-    Motions_2.append(out_list_2)
-    Motions_rot1.append(rot_lists)
-    Motions_rot2.append(rot_lists2)
+        #モーション作成
+        Motions_1.append(out_list_1)
+        Motions_2.append(out_list_2)
+        Motions_rot1.append(rot_lists)
+        Motions_rot2.append(rot_lists2)
 
-print("モーション計算完了")
-
-# World座標プロット ########################################################
-#if plot_world_landmark:
-fig = plt.figure()
-ax = fig.add_subplot(111, projection="3d")
-fig.subplots_adjust(left=0.0, right=1, bottom=0, top=1)
-
-train_data=[]
-
-for motion_1,motion_2,rot1,rot2 in zip(Motions_1,Motions_2,Motions_rot1,Motions_rot2):
-
-    #座標がずれている地点を取得 
-    length_list=poseCheck_xyz(motion_1,motion_2)
-
-    #角度がずれている点を取得
-    length_rot_list=poseCheck_rot(rot1,rot2)
-
-    #座標差、角度差を連結
-    #r=np.concatenate(length_list,length_rot_list)
-
-    train_data.append(length_list)
-
-    
+    return Motions_1,Motions_2,Motions_rot1,Motions_rot2
 
 
 
-    
-    #描画のための処理ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
-    #角度か位置、どちらかがズレていれば間違いにする
-    zahyou = isGood(length_list,0.1)
-    rot = isGood(length_rot_list,10)
-    badlist= zahyou or rot 
+def animate(fig,update):
 
-    #描画
-    poseDraw(plt,ax,motion_1,badlist=badlist,pose_color="grey",isMaster=True)
-    poseDraw(plt,ax,motion_2,badlist=badlist,pose_color="chartreuse",isMaster=False)
+    # アニメーションを作成する
+    ani = FuncAnimation(fig, update, frames=len(x), blit=True)
 
-    plt.pause(.0001)
+    # アニメーションを保存する
+    ani.save('./outmovie/animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
 
-    #グラフ表示をクリア
-    ax.cla()
+    #plt.show()
 
-    if keyboard.is_pressed('escape'):
-        print("中断")
+def main():
+    #print("ーーーーーーーーーーーーーーーーーーーーーーーーーーーーー")
+    #DB取得
+    conn = sqlite3.connect(r'main.db')
+    #カーソル作成
+    c1 = conn.cursor()
+    c2 = conn.cursor()
+
+    #テーブルを指定しデータを取得
+    c1.execute("select * from pose1")#教師データ
+    c2.execute("select * from pose2")#生徒データ
+
+    #データベース取得
+    #poselistはフレームごとの情報=====================
+    #各フレームにはの情報(インデックス、各関節の情報、現在時間の情報）が入っている
+    #各関節には[信頼度,(x座標,y座標,z座標)]の情報が入る========
+
+
+    #テーブル呼び出し
+    #fetchallで全呼び出しするとtupleで書き換え不可なのでfetchmanyで一つずつ変換して呼び出す
+    #frames1 = c1.fetchall()
+    #frames2 = c2.fetchall()
+    frames1 = []
+    frames2 = []
+    # 1行ずつlist型で取得
+    rows = []
+
+    while True:
+        row1 = c1.fetchmany(size=1)
+        row2 = c2.fetchmany(size=1)
+        if not row1 or not row2:
+            break
+        frames1.append([str(row1[0][0]),eval(row1[0][1]),float(row1[0][2])])
+        frames2.append([str(row2[0][0]),eval(row2[0][1]),float(row2[0][2])])
+        
+
+
+    print(frames1[-1][2])
+    #nフレームの形に形成（30フレーム）
+    frames1=fps_set(frames1,30)
+    frames2=fps_set(frames2,30)
+
+
+
+
+
+    Motions_1, Motions_2, Motions_rot1,Motions_rot2=motion_comparison(frames1,frames2)
+
+    #ここに入れる
+
+    print("モーション計算完了")
+
+    # World座標プロット ########################################################
+    #if plot_world_landmark:
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    fig.subplots_adjust(left=0.0, right=1, bottom=0, top=1)
+
+    train_data=[]
+    for motion_1,motion_2,rot1,rot2 in zip(Motions_1,Motions_2,Motions_rot1,Motions_rot2):
+
+        #座標がずれている地点を取得 
+        length_list=poseCheck_xyz(motion_1,motion_2)
+
+        #角度がずれている点を取得
+        length_rot_list=poseCheck_rot(rot1,rot2)
+
+        #座標差、角度差を連結
+        #r=np.concatenate(length_list,length_rot_list)
+
+        train_data.append(length_list)
+
+        
+        
+
+
+        
+        #描画のための処理ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー
+        #角度か位置、どちらかがズレていれば間違いにする
+        zahyou = isGood(length_list,0.1)
+        rot = isGood(length_rot_list,10)
+        badlist= zahyou or rot 
+
+        #描画
+        poseDraw(plt,ax,motion_1,badlist=badlist,pose_color="grey",isMaster=True)
+        poseDraw(plt,ax,motion_2,badlist=badlist,pose_color="chartreuse",isMaster=False)
+
+        plt.pause(.0001)
+
+        #グラフ表示をクリア
         ax.cla()
-        sys.exit()
 
-#score=ScoreLearning(np.array(length_list),score_est)
+        if keyboard.is_pressed('escape'):
+            print("中断")
+            ax.cla()
+            sys.exit()
 
-#score_est=np.array([8]*len(train_data)) #ユーザーの推定したスコア
-#score=ScoreLearning(np.array(train_data),score_est)
+    #score=ScoreLearning(np.array(length_list),score_est)
+
+    #score_est=np.array([8]*len(train_data)) #ユーザーの推定したスコア
+    #score=ScoreLearning(np.array(train_data),score_est)
 
 
 
-def __init__():
+if __name__ == "__main__":
     main()

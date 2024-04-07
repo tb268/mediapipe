@@ -1,4 +1,5 @@
 
+"""
 import tensorflow as tf
 import pandas as pd
 import numpy as np
@@ -55,4 +56,4 @@ def ScoreLearning(data1,score):
     print('\nTest accuracy、学習制度:', score)
 
     return score
-
+"""

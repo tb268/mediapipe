@@ -1,3 +1,4 @@
+"""
 
 import tensorflow as tf
 
@@ -42,3 +43,4 @@ pred = model.predict(ans, batch_size=1, verbose=0)
 score = np.argmax(pred)
 
 print('\n推定結果:', score)
+"""

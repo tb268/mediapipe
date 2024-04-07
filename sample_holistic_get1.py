@@ -7,6 +7,7 @@
 
 #python3 sample_holistic_get1.py --plot_world_landmark
 #xが左右、yが奥行き、zが上下
+#python3 anim_to_movie.py
 #行動取得用
 
 import copy
@@ -169,6 +170,7 @@ def main():
     elif masterCheck==0:
         isMaster=False
 
+    print(video_file+"のデータを処理します")
 
 
     
