@@ -1,52 +1,31 @@
-#matplotlibはダウングレードが必要
-#!pip install matplotlib==3.5.1
-import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.animation import ArtistAnimation
+import tkinter as tk
 
-# データの準備
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
+def on_configure(event):
+    """Canvasのスクロール領域を調整するコールバック関数"""
+    canvas.configure(scrollregion=canvas.bbox("all"))
 
-# パラメータの設定
-t = np.linspace(0, 2 * np.pi, 100)
-x1 = np.sin(t)
-y1 = np.cos(t)
-z1 = t
+root = tk.Tk()
+root.title("Scrollable Frame Example")
 
-x2 = np.cos(t)
-y2 = np.sin(t)
-z2 = t
+# Canvasウィジェットを作成します
+canvas = tk.Canvas(root)
+canvas.pack(side="left", fill="both", expand=True)
 
-x3 = np.tan(t)
-y3 = np.cos(t)
-z3 = t
+# スクロールバーを作成し、Canvasに配置します
+scrollbar = tk.Scrollbar(root, command=canvas.yview)
+scrollbar.pack(side="right", fill="y")
+canvas.configure(yscrollcommand=scrollbar.set)
 
-# プロットの初期化
-plots = []
+# FrameをCanvas内に配置します
+frame = tk.Frame(canvas)
+canvas.create_window((0, 0), window=frame, anchor="nw")
 
-# フレームごとのプロットデータを作成
-for i in range(len(t) - 1):
+# Canvasのサイズが変更されたときにスクロール領域を調整するように設定します
+frame.bind("<Configure>", on_configure)
 
-    plot_data = []
-    s=ax.plot(x1[i:i+2], y1[i:i+2], z1[i:i+2], color='r')[0]
-    #print(x2[i:i+2], y2[i:i+2], z2[i:i+2])
-    plot_data.append(s)
-    plot_data.append(ax.plot(x2[i:i+2], y2[i:i+2], z2[i:i+2], color='g')[0])
-    plot_data.append(ax.plot(x3[i:i+2], y3[i:i+2], z3[i:i+2], color='b')[0])
-    
-    plots.append(plot_data)
+# ダミーのラベルをFrame内に配置します
+for i in range(50):
+    label = tk.Label(frame, text=f"Label {i}")
+    label.pack()
 
-# アーティストのアニメーションを作成
-
-print(len(plots))
-print(len(plots[0]))
-print(plots[0])
-print(plots[0][0])
-ani = ArtistAnimation(fig, plots, interval=100, repeat=False)
-
-# アニメーションの保存
-ani.save('3d_lines_animation.mp4', writer='ffmpeg')
-
-#plt.show()
+root.mainloop()

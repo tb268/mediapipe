@@ -1,5 +1,5 @@
 
-"""
+
 import tensorflow as tf
 import pandas as pd
 import numpy as np
@@ -7,18 +7,15 @@ import numpy as np
 def ScoreLearning(data1,score):
 
     print("＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄＄")
-    mnist = tf.keras.datasets.mnist 
+    
 
-    (x_train, y_train), (x_test, y_test) = mnist.load_data() #データの読み込み
+    #(x_train, y_train), (x_test, y_test) = mnist.load_data() #データの読み込み
     #x_train, x_test = x_train / 255.0, x_test / 255.0 #データの正規化
     
     # データの形状を変換
     train = data1
 
-    print(x_train.shape)
     print(train.shape)
-    print(type(x_train))
-    print(type(y_train))
     print(type(train))
     print(type(score))
 
@@ -56,4 +53,4 @@ def ScoreLearning(data1,score):
     print('\nTest accuracy、学習制度:', score)
 
     return score
-"""
+
